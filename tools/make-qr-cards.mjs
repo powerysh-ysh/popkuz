@@ -273,3 +273,19 @@ console.log(`  부착 위치 안내: ${OUT}/부착위치.txt\n`)
   await sharp(bg).composite(layers).png().toFile(path.join(OUT, '06-입구POP.png'))
   console.log(`  ✓ ${'print/06-입구POP.png'.padEnd(26)} 입구 안내용 (A4, A3 확대 가능)`)
 }
+
+// ── 화면 표시용 낱개 QR ─────────────────────────────────────
+// 인쇄 없이 노트북·태블릿 화면에 띄워놓고 스캔하게 하려고 만듭니다.
+// 앱의 #/qr 페이지가 이 이미지를 불러 씁니다.
+{
+  await mkdir('public/qr', { recursive: true })
+  for (const c of CHARACTERS) {
+    await QRCode.toFile(path.join('public/qr', `${c.id}.png`), `${base}/#/c/${c.id}?k=${c.token}`, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 560,
+      color: { dark: '#1b1d21', light: '#ffffff' },
+    })
+  }
+  console.log(`  ✓ public/qr/*.png            화면 표시용 (앱 #/qr 에서 사용)`)
+}

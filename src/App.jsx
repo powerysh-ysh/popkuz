@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Catch from './pages/Catch'
 import Scan from './pages/Scan'
+import QrBoard from './pages/QrBoard'
 import Dex from './pages/Dex'
 import Done from './pages/Done'
 import Staff from './pages/Staff'
@@ -17,6 +18,8 @@ export default function App() {
       <Route path="/dex" element={<Dex />} />
       <Route path="/done" element={<Done />} />
       <Route path="/staff" element={<Staff />} />
+      {/* 인쇄 없이 시연할 때 쓰는 화면 QR 보드 */}
+      <Route path="/qr" element={<QrBoard />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
