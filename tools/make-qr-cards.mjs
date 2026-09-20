@@ -195,3 +195,81 @@ await writeFile(path.join(OUT, '부착위치.txt'), guide, 'utf8')
 
 console.log(`\n  ${CHARACTERS.length}장 생성 완료 → ${OUT}/`)
 console.log(`  부착 위치 안내: ${OUT}/부착위치.txt\n`)
+
+// ── 입구 안내 POP ──────────────────────────────────────────
+// 부스 입구에 세워 "이런 게임이 있다"를 알리는 한 장. A4 300dpi로
+// 만들지만 A3로 확대 인쇄해도 깨지지 않습니다.
+{
+  const W = 2480
+  const H = 3508
+  const layers = []
+
+  // 캐릭터 5마리 한 줄
+  const TH = 330
+  const thumbs = []
+  let tw = 0
+  for (const c of CHARACTERS) {
+    const b = await sharp(`public/characters/${c.id}.webp`)
+      .resize({ height: TH, fit: 'inside' })
+      .png()
+      .toBuffer()
+    const m = await sharp(b).metadata()
+    thumbs.push({ b, w: m.width, h: m.height })
+    tw += m.width
+  }
+  const gap = Math.floor((W - 240 - tw) / (CHARACTERS.length - 1))
+  let x = 120
+  for (const t of thumbs) {
+    layers.push({ input: t.b, left: Math.round(x), top: Math.round(900 + (TH - t.h) / 2) })
+    x += t.w + gap
+  }
+
+  // 시작 QR (홈 화면)
+  const qr = await QRCode.toBuffer(`${base}/`, {
+    type: 'png',
+    errorCorrectionLevel: 'H',
+    margin: 1,
+    width: 900,
+    color: { dark: '#1b1d21', light: '#ffffff' },
+  })
+  layers.push({ input: qr, left: Math.round((W - 900) / 2), top: 1620 })
+
+  const bg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8F7EF"/><stop offset="100%" stop-color="#FFFFFF"/>
+    </linearGradient></defs>
+    <rect width="${W}" height="${H}" fill="url(#g)"/>
+    <rect x="0" y="0" width="${W}" height="26" fill="#22A45D"/>
+
+    <text x="${W / 2}" y="330" text-anchor="middle" font-family="${FONT}"
+          font-size="66" letter-spacing="10" fill="#22A45D">DONGMYONG UNIVERSITY STARTUP</text>
+    <text x="${W / 2}" y="520" text-anchor="middle" font-family="${FONT}"
+          font-size="168" font-weight="bold" fill="#1b1d21">팝꾸즈를 찾아라!</text>
+    <text x="${W / 2}" y="660" text-anchor="middle" font-family="${FONT}"
+          font-size="72" fill="#4a5057">부스 안에 숨은 팝꾸즈 5마리를 모으세요</text>
+    <text x="${W / 2}" y="770" text-anchor="middle" font-family="${FONT}"
+          font-size="58" fill="#868d95">가입 없이 QR만 찍으면 시작 · 10초면 충분해요</text>
+
+    <text x="${W / 2}" y="1560" text-anchor="middle" font-family="${FONT}"
+          font-size="86" font-weight="bold" fill="#22A45D">여기를 찍고 시작하세요</text>
+
+    <text x="240" y="2720" font-family="${FONT}" font-size="66" fill="#1b1d21">
+      <tspan font-weight="bold" fill="#22A45D">1</tspan><tspan dx="30">QR을 찍고 닉네임을 정해요</tspan></text>
+    <text x="240" y="2840" font-family="${FONT}" font-size="66" fill="#1b1d21">
+      <tspan font-weight="bold" fill="#22A45D">2</tspan><tspan dx="30">부스를 돌며 팝꾸즈 5마리를 찾아요</tspan></text>
+    <text x="240" y="2960" font-family="${FONT}" font-size="66" fill="#1b1d21">
+      <tspan font-weight="bold" fill="#22A45D">3</tspan><tspan dx="30">다 모으면 진화형이 해금돼요!</tspan></text>
+    <text x="240" y="3080" font-family="${FONT}" font-size="66" fill="#1b1d21">
+      <tspan font-weight="bold" fill="#22A45D">4</tspan><tspan dx="30">완주 화면을 보여주고 선물 받아요</tspan></text>
+
+    <rect x="200" y="3170" width="${W - 400}" height="180" rx="40" fill="#FFF6D6" stroke="#F2B705" stroke-width="6"/>
+    <text x="${W / 2}" y="3290" text-anchor="middle" font-family="${FONT}"
+          font-size="76" font-weight="bold" fill="#8a6500">완주 선물 드립니다 🎁</text>
+
+    <text x="${W / 2}" y="3450" text-anchor="middle" font-family="${FONT}"
+          font-size="50" fill="#868d95">동명대학교 창업학과 · 시작박스 START BOX</text>
+  </svg>`)
+
+  await sharp(bg).composite(layers).png().toFile(path.join(OUT, '06-입구POP.png'))
+  console.log(`  ✓ ${'print/06-입구POP.png'.padEnd(26)} 입구 안내용 (A4, A3 확대 가능)`)
+}
