@@ -4,6 +4,7 @@ import { CHARACTERS, TOTAL, findCharacter } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/scanner'
 import { sharePhoto, takePhoto } from '../lib/photo'
+import { elapsed, formatTime, getMission, markMission } from '../lib/mission'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -35,6 +36,9 @@ export default function Scan() {
   // 인식 상태 — 무엇이 안 되는지 화면에서 바로 보이게 합니다.
   const [stat, setStat] = useState(null)
   const otherQrAt = useRef(0)
+  // 미션 모드가 켜져 있으면 목표와 경과 시간을 위에 띄웁니다.
+  const [mission, setMission] = useState(() => getMission())
+  const [, tickTime] = useState(0)
 
   const handleFound = useCallback(
     (text) => {
@@ -59,6 +63,12 @@ export default function Scan() {
     },
     [has]
   )
+
+  useEffect(() => {
+    if (!mission || mission.doneAt) return
+    const t = setInterval(() => tickTime((n) => n + 1), 200)
+    return () => clearInterval(t)
+  }, [mission])
 
   // 시연·점검용: #/scan?demo=chokku 로 열면 카메라 없이 발견 연출을 볼 수 있습니다.
   // (회의에서 보여줄 때, 그리고 카메라가 없는 환경에서 화면을 확인할 때 씁니다.)
@@ -113,6 +123,25 @@ export default function Scan() {
     if (!c) return
     const { state } = capture(c.id)
     buzz([50, 40, 120])
+
+    // 미션 중이면 목표 달성 여부를 함께 확인합니다.
+    const m = getMission()
+    if (m && !m.doneAt) {
+      const r = markMission(c.id)
+      setMission(r.mission)
+      foundRef.current = null
+      setFound(null)
+      if (r.done) {
+        navigate('/mission')
+        return
+      }
+      if (!r.hit) {
+        setToast('이번 미션 대상은 아니에요 (도감에는 담았어요)')
+        setTimeout(() => setToast(''), 2400)
+      }
+      return
+    }
+
     const done = state.caught.length >= TOTAL
     foundRef.current = null
     setFound(null)
@@ -206,7 +235,24 @@ export default function Scan() {
           ✕
         </Link>
         <div className="scan-progress">
-          <Progress count={count} total={TOTAL} />
+          {mission && !mission.doneAt ? (
+            <div className="scan-mission">
+              <span className="scan-mission-time">{formatTime(elapsed(mission))}</span>
+              <span className="scan-mission-targets">
+                {mission.targets.map((id) => {
+                  const c = CHARACTERS.find((x) => x.id === id)
+                  const got = mission.got.includes(id)
+                  return (
+                    <span key={id} className={got ? 'mt got' : 'mt'} style={{ color: c.color }}>
+                      {got ? '✓' : '·'} {c.name}
+                    </span>
+                  )
+                })}
+              </span>
+            </div>
+          ) : (
+            <Progress count={count} total={TOTAL} />
+          )}
         </div>
       </div>
 

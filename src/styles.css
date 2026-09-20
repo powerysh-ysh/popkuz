@@ -986,3 +986,51 @@ button {
   image-rendering: pixelated;
   background: #fff;
 }
+
+/* ── 미션 모드 ────────────────────────────── */
+.btn-mission {
+  background: #1b1d21;
+  box-shadow: 0 6px 0 #000;
+  color: #FFE066;
+}
+
+.btn-mission:active {
+  box-shadow: 0 2px 0 #000;
+  transform: translateY(4px) scale(1);
+}
+
+.mission-time {
+  font-size: 46px;
+  color: var(--green-dark);
+  letter-spacing: 0.02em;
+  margin: 4px 0 8px;
+}
+
+/* 탐지기 위쪽 미션 HUD */
+.scan-mission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scan-mission-time {
+  font-size: 17px;
+  color: #FFE066;
+  flex: none;
+}
+
+.scan-mission-targets {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.scan-mission-targets .mt {
+  opacity: 0.6;
+}
+
+.scan-mission-targets .mt.got {
+  opacity: 1;
+  font-weight: bold;
+}

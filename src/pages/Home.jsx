@@ -60,6 +60,9 @@ export default function Home() {
           <Link className="btn btn-primary" to="/scan">
             🔍 팝꾸즈 탐지기 켜기
           </Link>
+          <Link className="btn btn-mission" to="/mission">
+            ⚡ 스피드 미션 도전
+          </Link>
           <Link className="btn btn-ghost" to="/dex">
             도감 열기
           </Link>
