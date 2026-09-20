@@ -18,14 +18,18 @@ export default function Catch() {
   const navigate = useNavigate()
   const { capture, count, started } = useHunt()
   const [result, setResult] = useState(null)
-  const done = useRef(false)
+  // "이미 처리했는가"를 boolean으로 두면, 이 화면에 머문 채 다음 QR을 찍었을 때
+  // (라우터가 같은 컴포넌트를 재사용하므로) 두 번째 캐릭터가 잡히지 않습니다.
+  // 어떤 캐릭터를 처리했는지를 기억해야 합니다.
+  const capturedId = useRef(null)
 
   const character = findCharacter(id)
   const tokenOk = character && params.get('k') === character.token
 
   useEffect(() => {
-    if (!character || !tokenOk || done.current) return
-    done.current = true // StrictMode 이중 실행 방지
+    if (!character || !tokenOk) return
+    if (capturedId.current === character.id) return // StrictMode 이중 실행 방지
+    capturedId.current = character.id
     setResult(capture(character.id))
   }, [character, tokenOk, capture])
 

@@ -512,7 +512,10 @@ button {
   position: relative;
   display: inline-grid;
   place-items: center;
-  flex: none;
+  /* 인라인 width는 최대 크기로만 쓰고, 좁은 화면에서는 줄어들게 둡니다.
+     5마리를 한 줄에 세우는 홈/완주 화면이 375px에서 넘치지 않도록. */
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 
 .pk-img {
@@ -522,9 +525,12 @@ button {
   display: block;
 }
 
-/* 미획득: 형태만 남기고 정체를 숨깁니다 */
+/* 미획득: 형태만 남기고 정체를 숨깁니다.
+   밝기를 0으로 눌러 완전한 검은 실루엣을 만든 뒤 투명도로 낮춥니다.
+   캐릭터 색이나 배경색이 무엇이든 항상 같은 농도로 보입니다
+   (연한 배경에서 실루엣이 묻히는 문제를 막습니다). */
 .pk-silhouette {
-  filter: grayscale(1) brightness(0.62) contrast(0.42) opacity(0.5);
+  filter: grayscale(1) brightness(0) opacity(0.26);
 }
 
 .pk-aura {
