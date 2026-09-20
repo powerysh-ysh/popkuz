@@ -19,8 +19,10 @@ export function HuntProvider({ children }) {
     const { state: next, isNew } = storage.addCatch(id)
     setState(next)
     if (isNew) {
-      // 닉네임 없이 QR부터 찍은 사람도 참여자로 세야 하므로 함께 기록합니다.
-      syncHunter(next)
+      // 닉네임 없이 QR부터 찍은 사람도 참여자로 세야 하므로, 첫 획득 때
+      // 참여자 행을 함께 만듭니다. 두 번째부터는 이미 있으므로 보내지
+      // 않습니다 — 현장 네트워크에서 쓸모없는 요청을 줄입니다.
+      if (next.caught.length === 1) syncHunter(next)
       syncCatch(next, id)
     }
     return { state: next, isNew }

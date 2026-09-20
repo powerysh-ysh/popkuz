@@ -40,9 +40,11 @@ async function insert(table, body) {
         'Content-Type': 'application/json',
         apikey: KEY,
         Authorization: `Bearer ${KEY}`,
-        // ignore-duplicates: 같은 행을 두 번 보내도 조용히 무시됩니다.
-        // (UPDATE 권한이 필요한 merge-duplicates와 달리 INSERT 권한만 씁니다.)
-        Prefer: 'resolution=ignore-duplicates,return=minimal',
+        // Prefer에 resolution=... 을 넣으면 PostgREST가 이 요청을 UPSERT로
+        // 취급합니다. UPSERT는 INSERT 정책만으로는 안 되고 UPDATE 정책까지
+        // 요구해서, 우리 RLS 설정(INSERT 전용)에서는 전부 거부됩니다.
+        // 중복은 409로 돌아오고 어차피 무시하므로 return=minimal만 씁니다.
+        Prefer: 'return=minimal',
       },
       body: JSON.stringify(body),
     })
@@ -54,7 +56,7 @@ async function insert(table, body) {
   }
 }
 
-/** 게임을 시작한 사람. 이미 있으면 무시됩니다. */
+/** 게임을 시작한 사람. 이미 있으면 409가 돌아오고 무시됩니다. */
 export function syncHunter(state) {
   return insert('hunt_hunters', {
     id: state.hunterId,
@@ -107,8 +109,8 @@ export async function checkConnection() {
 export async function diagnoseWrite() {
   if (!syncEnabled) return { ok: false, detail: '환경변수 없음' }
 
-  // 서버가 이 요청을 어떤 DB 역할로 처리하는지 먼저 확인합니다.
-  // RLS 정책은 역할에 걸리므로, 역할을 모르면 원인을 못 찾습니다.
+  // 서버가 이 요청을 어떤 DB 역할로 처리하는지 함께 보여줍니다.
+  // (RLS 정책은 역할에 걸리므로 원인 추적에 필요합니다.)
   let role = '(확인 불가)'
   try {
     const r = await fetch(`${URL_BASE}/rest/v1/rpc/whoami`, {
@@ -120,8 +122,7 @@ export async function diagnoseWrite() {
       },
       body: '{}',
     })
-    const t = await r.text()
-    role = r.ok ? t.replace(/"/g, '') : `조회실패 HTTP ${r.status}`
+    role = r.ok ? (await r.text()).replace(/"/g, '') : `조회실패 HTTP ${r.status}`
   } catch {
     role = '(요청 실패)'
   }
@@ -135,14 +136,14 @@ export async function diagnoseWrite() {
         'Content-Type': 'application/json',
         apikey: KEY,
         Authorization: `Bearer ${KEY}`,
-        Prefer: 'resolution=ignore-duplicates,return=minimal',
+        Prefer: 'return=minimal',
       },
       body: JSON.stringify({ id, nickname: '__진단__', started_at: new Date().toISOString() }),
     })
     const body = await res.text()
     return {
       ok: res.ok,
-      detail: `역할=${role} · HTTP ${res.status}${body ? ' · ' + body.slice(0, 200) : ''}`,
+      detail: `역할=${role} · HTTP ${res.status}${body ? ' · ' + body.slice(0, 180) : ''}`,
     }
   } catch (e) {
     return { ok: false, detail: `역할=${role} · 요청 실패: ${e?.message || e}` }

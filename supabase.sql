@@ -49,23 +49,39 @@ alter table hunt_hunters     enable row level security;
 alter table hunt_catches     enable row level security;
 alter table hunt_completions enable row level security;
 
--- 관람객(anon)에게는 "쓰기"만 허용합니다.
+-- ⚠️ 앱은 요청에 Prefer: resolution=... 을 붙이지 않습니다.
+--    그 헤더가 붙으면 PostgREST가 UPSERT로 처리하고, UPSERT는 INSERT 정책
+--    만으로는 부족해 UPDATE 정책까지 요구합니다. 여기서는 UPDATE를 일부러
+--    주지 않으므로 그런 요청은 전부 42501로 거부됩니다.
+--
+-- 관람객에게는 "쓰기"만 허용합니다.
 -- 조회(select) · 수정(update) · 삭제(delete) 정책은 만들지 않습니다.
 --   → 남의 기록을 읽을 수도, 고칠 수도, 지울 수도 없습니다.
 --   → 통계 조회는 대시보드(관리자 권한)에서만 합니다.
 
-drop policy if exists "anon can insert hunters"     on hunt_hunters;
-drop policy if exists "anon can insert catches"     on hunt_catches;
-drop policy if exists "anon can insert completions" on hunt_completions;
+drop policy if exists "anon can insert hunters"       on hunt_hunters;
+drop policy if exists "anon can insert catches"       on hunt_catches;
+drop policy if exists "anon can insert completions"   on hunt_completions;
+drop policy if exists "public can insert hunters"     on hunt_hunters;
+drop policy if exists "public can insert catches"     on hunt_catches;
+drop policy if exists "public can insert completions" on hunt_completions;
 
-create policy "anon can insert hunters"
-  on hunt_hunters for insert to anon with check (true);
+-- 역할(to anon)을 지정하지 않습니다. 새 형식 publishable 키의 역할 매핑에
+-- 의존하지 않기 위함입니다. 읽기 정책이 없으므로 쓰기만 열려도 안전합니다.
+create policy "public can insert hunters"
+  on hunt_hunters for insert with check (true);
 
-create policy "anon can insert catches"
-  on hunt_catches for insert to anon with check (true);
+create policy "public can insert catches"
+  on hunt_catches for insert with check (true);
 
-create policy "anon can insert completions"
-  on hunt_completions for insert to anon with check (true);
+create policy "public can insert completions"
+  on hunt_completions for insert with check (true);
+
+
+-- 자가진단용: 서버가 요청을 어떤 역할로 처리하는지 확인하는 함수
+create or replace function whoami() returns text
+language sql stable as $$ select current_user::text $$;
+grant execute on function whoami() to public;
 
 
 -- ── 3. 설치 점검 ────────────────────────────────────────────
