@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+
+# 다운로드 임시 파일
+*.crdownload
+*.part
+미확인*
+popkuz-dist.zip

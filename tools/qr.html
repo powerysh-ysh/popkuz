@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>팝꾸즈 QR 카드 인쇄</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+<style>
+  :root { --font: 'Jua', system-ui, 'Malgun Gothic', sans-serif; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--font); background: #eef1f4; margin: 0; padding: 24px; color: #1b1d21; }
+  .bar { max-width: 900px; margin: 0 auto 20px; background: #fff; border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+  .bar h1 { margin: 0 0 6px; font-size: 20px; }
+  .bar p { margin: 0 0 12px; font-size: 14px; color: #555c63; line-height: 1.6; }
+  .bar label { display: block; font-size: 13px; color: #555c63; margin-bottom: 6px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  input { flex: 1; min-width: 260px; padding: 12px 14px; border: 2px solid #dfe3e8; border-radius: 10px; font-size: 15px; font-family: inherit; }
+  button { padding: 12px 22px; border: none; border-radius: 10px; background: #22a45d; color: #fff; font-size: 15px; font-family: inherit; cursor: pointer; }
+
+  .cards { max-width: 900px; margin: 0 auto; display: grid; gap: 20px; }
+  .card { background: #fff; border-radius: 18px; padding: 28px 26px; display: flex; align-items: center; gap: 26px;
+          box-shadow: 0 4px 14px rgba(0,0,0,.07); break-inside: avoid; page-break-inside: avoid; border: 6px solid; }
+  .art { flex: none; width: 190px; text-align: center; }
+  .art svg { width: 170px; height: 150px; }
+  .art .name { font-size: 30px; margin-top: 2px; }
+  .art .en { font-size: 11px; letter-spacing: .18em; color: #868d95; }
+  .mid { flex: 1; min-width: 0; }
+  .mid .find { font-size: 27px; line-height: 1.35; margin: 0 0 8px; }
+  .mid .quote { font-size: 15px; color: #4a5057; margin: 0 0 12px; line-height: 1.6; }
+  .mid .how { font-size: 13px; color: #868d95; margin: 0; line-height: 1.6; }
+  .qr { flex: none; text-align: center; }
+  .qr > div { padding: 10px; background: #fff; border: 3px solid #1b1d21; border-radius: 12px; display: inline-block; line-height: 0; }
+  .qr p { font-size: 12px; color: #868d95; margin: 8px 0 0; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .bar { display: none; }
+    .cards { max-width: none; gap: 0; }
+    .card { box-shadow: none; margin: 0 0 14mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>🖨 팝꾸즈 QR 카드 인쇄</h1>
+  <p>
+    배포된 주소를 넣고 <b>카드 만들기</b>를 누른 뒤, 브라우저 인쇄(Ctrl+P)로 뽑으세요.<br />
+    용지 A4 세로 / 배율 100% / <b>배경 그래픽 켜기</b> 체크를 잊지 마세요.
+  </p>
+  <label for="base">배포 주소 (끝에 / 없이)</label>
+  <div class="row">
+    <input id="base" value="https://popkuz.netlify.app" />
+    <button onclick="render()">카드 만들기</button>
+  </div>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<script>
+const CHARS = [
+  { id:'chokku',  token:'sb01', name:'초꾸',  en:'CHOKKU',  color:'#22A45D', dark:'#177843', light:'#E8F7EF', icon:'🌿', quote:'어디든 가보자! 새로운 게 기다리고 있어!', spot:'부스 입구 · 웰컴 배너' },
+  { id:'ppakku',  token:'sb02', name:'빠꾸',  en:'PPAKKU',  color:'#E03131', dark:'#A61E1E', light:'#FDECEC', icon:'🔥', quote:'멈추지 않아! 지금이 바로 시작이야!', spot:'참가팀 전시품 존' },
+  { id:'nokku',   token:'sb03', name:'노꾸',  en:'NOKKU',   color:'#F2B705', dark:'#C08F00', light:'#FEF6E0', icon:'⚡', quote:'좋은 생각이 떠올랐어! 함께 만들어보자!', spot:'키캡 만들기 체험 테이블' },
+  { id:'heenkku', token:'sb04', name:'흰꾸',  en:'HEENKKU', color:'#C9D1D9', dark:'#8B97A3', light:'#F4F6F8', icon:'❄️', quote:'천천히, 그리고 확실하게. 언제나 함께야.', spot:'학교소개 · 벽면패널' },
+  { id:'kkumkku', token:'sb05', name:'꿈꾸',  en:'KKUMKKU', color:'#8B5CF6', dark:'#6634D4', light:'#F1EBFE', icon:'⭐', quote:'상상해봐! 지금 이 순간, 뭐든 될 수 있어!', spot:'시작박스 다이어리 존' },
+]
+
+function crate(c) {
+  const ribs = [50,63,91,104].map(x =>
+    `<line x1="${x}" y1="72" x2="${x}" y2="136" stroke="${c.dark}" stroke-width="3" stroke-linecap="round" opacity=".5"/>`).join('')
+  const eye = (cx) => `
+    <ellipse cx="${cx}" cy="100" rx="15" ry="16" fill="#fff" stroke="#1B1D21" stroke-width="3"/>
+    <circle cx="${cx+2}" cy="102" r="7" fill="#1B1D21"/>
+    <circle cx="${cx+5}" cy="98" r="2.4" fill="#fff"/>`
+  return `<svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="163" rx="58" ry="10" fill="#000" opacity=".1"/>
+    <path d="M52 62 L100 38 L168 62 L120 86 Z" fill="${c.color}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round" opacity=".85"/>
+    <path d="M120 86 L168 62 L168 122 L120 146 Z" fill="${c.dark}" stroke="${c.dark}" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="34" y="62" width="86" height="84" rx="12" fill="${c.color}" stroke="${c.dark}" stroke-width="3"/>
+    ${ribs}${eye(64)}${eye(96)}
+  </svg>`
+}
+
+function render() {
+  const base = document.getElementById('base').value.trim().replace(/\/$/, '')
+  const wrap = document.getElementById('cards')
+  wrap.innerHTML = ''
+  CHARS.forEach(c => {
+    const url = `${base}/#/c/${c.id}?k=${c.token}`
+    const el = document.createElement('div')
+    el.className = 'card'
+    el.style.borderColor = c.color
+    el.style.background = c.light
+    el.innerHTML = `
+      <div class="art">
+        ${crate(c)}
+        <div class="name" style="color:${c.dark}">${c.name}</div>
+        <div class="en">${c.en}</div>
+      </div>
+      <div class="mid">
+        <p class="find">${c.icon} 나를 찾아줘!</p>
+        <p class="quote">“${c.quote}”</p>
+        <p class="how">휴대폰 카메라로 QR을 찍으면<br/>${c.name}를 도감에 담을 수 있어요.</p>
+      </div>
+      <div class="qr"><div id="qr-${c.id}"></div><p>${c.spot}</p></div>`
+    wrap.appendChild(el)
+    new QRCode(document.getElementById(`qr-${c.id}`), {
+      text: url, width: 150, height: 150,
+      colorDark: '#1b1d21', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,  // 부스 조명/훼손 대비 최고 복원력
+    })
+  })
+}
+render()
+</script>
+</body>
+</html>

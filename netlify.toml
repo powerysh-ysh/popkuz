@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA 라우팅: 모든 경로를 index.html로 (QR 링크 /c/chokku 가 404 나지 않도록)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

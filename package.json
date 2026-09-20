@@ -1,0 +1,23 @@
+{
+  "name": "popkuz",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "팝꾸즈를 찾아라 - 2026 산학협력 EXPO 시작박스 부스 스탬프랠리",
+  "scripts": {
+    "dev": "vite",
+    "build": "node tools/optimize-images.mjs && vite build",
+    "preview": "vite preview",
+    "images": "node tools/optimize-images.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "sharp": "^0.35.4",
+    "vite": "^6.0.7"
+  }
+}
