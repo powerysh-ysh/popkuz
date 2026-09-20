@@ -1,11 +1,17 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
+import { arSupported, launchAR } from '../lib/ar'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
 export default function Dex() {
   const { has, count, complete, state } = useHunt()
+
+  // AR은 보너스입니다. 지원하지 않는 기기에서는 버튼 자체를 감춥니다.
+  const [ar, setAr] = useState(false)
+  useEffect(() => setAr(arSupported()), [])
 
   return (
     <div className="shell">
@@ -40,6 +46,15 @@ export default function Dex() {
                 {caught ? `${c.elementIcon} ${c.element}` : '아직 만나지 못했어요'}
               </p>
               {!caught && <p className="spot">📍 {c.spot}</p>}
+              {caught && ar && (
+                <button
+                  className="arbtn"
+                  style={{ borderColor: c.color, color: c.colorDark }}
+                  onClick={() => launchAR(c)}
+                >
+                  📱 AR로 세워보기
+                </button>
+              )}
             </div>
           )
         })}

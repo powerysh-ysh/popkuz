@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "images": "node tools/optimize-images.mjs",
     "qr": "node tools/make-qr-cards.mjs",
-    "stickers": "node tools/make-stickers.mjs"
+    "stickers": "node tools/make-stickers.mjs",
+    "ar": "node tools/make-3d.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
