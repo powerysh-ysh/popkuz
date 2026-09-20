@@ -109,8 +109,7 @@ export async function checkConnection() {
 export async function diagnoseWrite() {
   if (!syncEnabled) return { ok: false, detail: '환경변수 없음' }
 
-  // 서버가 이 요청을 어떤 DB 역할로 처리하는지 함께 보여줍니다.
-  // (RLS 정책은 역할에 걸리므로 원인 추적에 필요합니다.)
+  // 서버가 이 요청을 어떤 DB 역할로 처리하는지 확인합니다.
   let role = '(확인 불가)'
   try {
     const r = await fetch(`${URL_BASE}/rest/v1/rpc/whoami`, {
@@ -129,8 +128,9 @@ export async function diagnoseWrite() {
 
   const id =
     crypto?.randomUUID?.() ?? `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}`
-  try {
-    const res = await fetch(`${URL_BASE}/rest/v1/hunt_hunters`, {
+
+  const put = () =>
+    fetch(`${URL_BASE}/rest/v1/hunt_hunters`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -140,10 +140,27 @@ export async function diagnoseWrite() {
       },
       body: JSON.stringify({ id, nickname: '__진단__', started_at: new Date().toISOString() }),
     })
-    const body = await res.text()
+
+  try {
+    // 1차: 실제로 한 줄 넣어봅니다.
+    const first = await put()
+    if (!first.ok) {
+      const body = await first.text()
+      return {
+        ok: false,
+        detail: `역할=${role} · 쓰기 거부 HTTP ${first.status} · ${body.slice(0, 160)}`,
+      }
+    }
+
+    // 2차: 같은 id를 다시 넣습니다. 조회 권한이 없어도, 여기서 409(중복)가
+    // 나오면 1차가 실제로 저장돼 남아 있다는 뜻입니다.
+    const second = await put()
+    if (second.status === 409) {
+      return { ok: true, detail: `역할=${role} · 저장 확인 (201 → 409 중복)` }
+    }
     return {
-      ok: res.ok,
-      detail: `역할=${role} · HTTP ${res.status}${body ? ' · ' + body.slice(0, 180) : ''}`,
+      ok: true,
+      detail: `역할=${role} · 쓰기 성공(201)했지만 중복 확인은 HTTP ${second.status}`,
     }
   } catch (e) {
     return { ok: false, detail: `역할=${role} · 요청 실패: ${e?.message || e}` }
