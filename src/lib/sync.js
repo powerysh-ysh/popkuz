@@ -97,6 +97,38 @@ export async function checkConnection() {
   }
 }
 
+/**
+ * 쓰기 자가진단 (스태프 화면용).
+ *
+ * 평소 insert()는 현장 안정성을 위해 오류를 삼킵니다. 설정이 잘못됐을 때
+ * 원인을 볼 수 없으므로, 진단용으로 실제 한 줄을 넣어보고 서버가 준
+ * 상태코드와 메시지를 그대로 보여줍니다.
+ */
+export async function diagnoseWrite() {
+  if (!syncEnabled) return { ok: false, detail: '환경변수 없음' }
+  const id =
+    crypto?.randomUUID?.() ?? `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}`
+  try {
+    const res = await fetch(`${URL_BASE}/rest/v1/hunt_hunters`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+        Prefer: 'resolution=ignore-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ id, nickname: '__진단__', started_at: new Date().toISOString() }),
+    })
+    const body = await res.text()
+    return {
+      ok: res.ok,
+      detail: `HTTP ${res.status}${body ? ' · ' + body.slice(0, 220) : ''}`,
+    }
+  } catch (e) {
+    return { ok: false, detail: `요청 실패: ${e?.message || e}` }
+  }
+}
+
 /** 완주 1건. */
 export function syncDone(state) {
   return insert('hunt_completions', {

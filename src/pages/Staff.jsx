@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
-import { checkConnection, syncEnabled } from '../lib/sync'
+import { checkConnection, diagnoseWrite, syncEnabled } from '../lib/sync'
 
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
@@ -12,6 +12,7 @@ export default function Staff() {
   const { resetAll, state, count, code } = useHunt()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const [conn, setConn] = useState({ ok: null, reason: '확인 중…' })
+  const [diag, setDiag] = useState(null)
 
   useEffect(() => {
     let alive = true
@@ -92,6 +93,30 @@ export default function Staff() {
               </tr>
             </tbody>
           </table>
+          <button
+            className="btn btn-ghost"
+            style={{ marginTop: 10 }}
+            onClick={async () => {
+              setDiag({ detail: '검사 중…' })
+              setDiag(await diagnoseWrite())
+            }}
+          >
+            쓰기 자가진단
+          </button>
+          {diag && (
+            <p
+              style={{
+                marginTop: 10,
+                fontSize: 13,
+                lineHeight: 1.6,
+                wordBreak: 'break-all',
+                color: diag.ok ? '#8CE99A' : '#FFA8A8',
+              }}
+            >
+              {diag.ok ? '✅ 쓰기 성공 — ' : '⚠️ '}
+              {diag.detail}
+            </p>
+          )}
           <button
             className="btn btn-ghost"
             style={{ marginTop: 10 }}

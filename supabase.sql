@@ -3,6 +3,11 @@
 --
 --  Supabase 대시보드 → SQL Editor → 이 파일 전체를 붙여넣고 Run
 --  한 번만 실행하면 됩니다. 여러 번 실행해도 안전합니다.
+--
+--  ⚠️ 실행이 끝날 때까지 다른 탭으로 옮기지 마세요.
+--     중간에 끊기면 테이블만 만들어지고 정책(2번)이 빠집니다.
+--     그 상태에서는 RLS가 모든 쓰기를 막아 기록이 하나도 안 쌓입니다.
+--     아래 3번 점검 쿼리로 항상 확인하세요.
 -- ============================================================
 
 -- ── 1. 테이블 ────────────────────────────────────────────────
@@ -61,6 +66,16 @@ create policy "anon can insert catches"
 
 create policy "anon can insert completions"
   on hunt_completions for insert to anon with check (true);
+
+
+-- ── 3. 설치 점검 ────────────────────────────────────────────
+-- 정책 3줄이 모두 보여야 정상입니다. 한 줄이라도 없으면 위 2번을
+-- 다시 실행하세요 (앱의 스태프 화면 > 쓰기 자가진단 으로도 확인 가능).
+
+select tablename, policyname, cmd, roles
+from pg_policies
+where tablename like 'hunt_%'
+order by tablename;
 
 
 -- ============================================================
