@@ -8,3 +8,6 @@ dist
 *.part
 미확인*
 popkuz-dist.zip
+
+print/
+popkuz-qr-cards.zip
