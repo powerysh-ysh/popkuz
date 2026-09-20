@@ -779,6 +779,57 @@ button {
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
 }
 
+/* ── 팡팡 뛰기 ──────────────────────────────
+   그냥 위아래로 움직이면 미끄러지는 느낌만 납니다. 살아있게 보이려면
+   ① 뛰기 직전에 납작해지고(anticipation) ② 뜰 때 길쭉해지고(stretch)
+   ③ 착지할 때 다시 눌리고(squash) ④ 그림자가 반대로 커졌다 작아져야
+   합니다. rotateY 를 살짝 섞어 입체감을 더합니다. */
+.scan-target {
+  perspective: 900px;
+}
+
+.hop {
+  animation: popIn 0.45s cubic-bezier(0.22, 1.4, 0.4, 1) both,
+             hop 1.15s cubic-bezier(0.33, 0, 0.35, 1) 0.45s infinite;
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+  will-change: transform;
+}
+
+@keyframes hop {
+  0%   { transform: translateY(0)     scaleX(1)    scaleY(1)    rotateY(0deg); }
+  8%   { transform: translateY(2%)    scaleX(1.12) scaleY(0.86) rotateY(-4deg); }  /* 웅크림 */
+  26%  { transform: translateY(-30%)  scaleX(0.9)  scaleY(1.14) rotateY(-9deg); }  /* 솟구침 */
+  44%  { transform: translateY(-46%)  scaleX(1)    scaleY(1)    rotateY(0deg); }   /* 정점 */
+  62%  { transform: translateY(-26%)  scaleX(0.94) scaleY(1.08) rotateY(9deg); }
+  76%  { transform: translateY(0)     scaleX(1.16) scaleY(0.84) rotateY(5deg); }   /* 착지 */
+  86%  { transform: translateY(-7%)   scaleX(0.97) scaleY(1.04) rotateY(2deg); }   /* 잔반동 */
+  94%  { transform: translateY(0)     scaleX(1.05) scaleY(0.95) rotateY(0deg); }
+  100% { transform: translateY(0)     scaleX(1)    scaleY(1)    rotateY(0deg); }
+}
+
+/* 캐릭터가 높이 뜰수록 그림자는 작고 옅어집니다 */
+.hop-shadow {
+  position: absolute;
+  bottom: 26px;
+  width: 42%;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 70%);
+  animation: hopShadow 1.15s cubic-bezier(0.33, 0, 0.35, 1) 0.45s infinite;
+  pointer-events: none;
+}
+
+@keyframes hopShadow {
+  0%   { transform: scale(1);    opacity: 0.55; }
+  8%   { transform: scale(1.1);  opacity: 0.6; }
+  44%  { transform: scale(0.5);  opacity: 0.2; }
+  76%  { transform: scale(1.12); opacity: 0.62; }
+  86%  { transform: scale(0.88); opacity: 0.42; }
+  100% { transform: scale(1);    opacity: 0.55; }
+}
+
 @keyframes popIn {
   0% { transform: scale(0.3) rotate(-12deg); opacity: 0; }
   70% { transform: scale(1.1) rotate(4deg); }
@@ -805,7 +856,9 @@ button {
   .scan-line,
   .radar,
   .scan-target .ring,
-  .bob {
+  .bob,
+  .hop,
+  .hop-shadow {
     animation: none;
   }
 }

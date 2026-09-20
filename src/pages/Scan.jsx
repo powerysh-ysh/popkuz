@@ -267,7 +267,9 @@ export default function Scan() {
           <button className="scan-target" onClick={grab} aria-label={`${found.character.name} 잡기`}>
             <span className="ring" style={{ borderColor: found.character.color }} />
             <span className="ring r2" style={{ borderColor: found.character.color }} />
-            <Popkku character={found.character} size={240} className="bob" />
+            {/* 그림자를 따로 두고 캐릭터와 반대로 움직여야 진짜로 뛰는 것처럼 보입니다 */}
+            <span className="hop-shadow" />
+            <Popkku character={found.character} size={240} className="hop" />
           </button>
 
           <p className="scan-found-name">{found.character.name}</p>
