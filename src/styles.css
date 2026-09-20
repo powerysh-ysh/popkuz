@@ -883,3 +883,17 @@ button {
   border-radius: 99px;
   white-space: nowrap;
 }
+
+/* 인식 상태 표시 — 현장에서 원인을 바로 보기 위한 것 */
+.scan-stat {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  word-break: break-all;
+}

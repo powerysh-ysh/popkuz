@@ -65,55 +65,111 @@ async function makeNativeDetector() {
  * @param {(text: string) => void} onFound  QR 문자열을 찾을 때마다 호출
  * @returns {() => void} 중지 함수
  */
-export function scanLoop(video, onFound) {
+export function scanLoop(video, onFound, onStatus) {
   let stopped = false
-  let raf = 0
+  let timer = 0
+  let running = false
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   let native = null
-  let last = 0
+  let nativeTried = false
+  const stat = { engine: '준비 중', frames: 0, decodes: 0, lastText: '', lastError: '' }
 
   // 초당 8회면 충분합니다. 매 프레임 돌리면 폰이 뜨거워지고 배터리가 빨리 닳습니다.
   const INTERVAL = 125
   // 긴 변을 이 크기로 줄여서 인식합니다. 원본 해상도로 돌리면 느립니다.
-  const MAX = 480
+  const MAX = 640
 
   makeNativeDetector().then((d) => {
     native = d
+    nativeTried = true
+    stat.engine = d ? 'BarcodeDetector' : 'jsQR'
   })
 
-  const tick = async (t) => {
-    if (stopped) return
-    raf = requestAnimationFrame(tick)
-    if (t - last < INTERVAL) return
-    last = t
-    if (video.readyState < 2 || !video.videoWidth) return
+  const report = () => onStatus?.({ ...stat })
+  report() // 루프가 살아 있다는 것을 즉시 알립니다
 
+  // requestAnimationFrame 을 쓰지 않습니다. rAF 는 화면이 보이지 않으면
+  // 아예 멈춰서, 스캔이 조용히 죽어버립니다. setInterval 이 더 튼튼합니다.
+  const tick = async () => {
+    if (stopped || running) return
+    running = true
     try {
-      if (native) {
-        const codes = await native.detect(video)
-        if (codes?.length) onFound(codes[0].rawValue)
-        return
-      }
+      await step()
+    } finally {
+      running = false
+    }
+  }
 
+  const step = async () => {
+    if (video.readyState < 2 || !video.videoWidth || video.videoWidth < 16) {
+      stat.engine = `영상 대기 (readyState ${video.readyState}, ${video.videoWidth}px)`
+      report()
+      return
+    }
+    if (!nativeTried) return // 어떤 엔진을 쓸지 아직 정해지지 않음
+
+    stat.frames++
+
+    // 1) 브라우저 내장 인식기
+    if (native) {
+      // 내장 인식기가 에러 없이 아무것도 못 찾는 기기가 있습니다.
+      // 5초쯤 지나도 한 건도 못 읽으면 조용히 jsQR 로 갈아탑니다.
+      if (stat.frames > 40 && stat.decodes === 0) {
+        native = null
+        stat.engine = 'jsQR (내장 무응답)'
+        report()
+      }
+    }
+    if (native) {
+      try {
+        const codes = await native.detect(video)
+        if (codes?.length) {
+          stat.decodes++
+          stat.lastText = codes[0].rawValue || ''
+          report()
+          onFound(stat.lastText)
+        } else if (stat.frames % 4 === 0) {
+          report()
+        }
+        return
+      } catch (e) {
+        // 내장 인식기가 이 기기에서 동작하지 않습니다 — 끄고 jsQR로 넘어갑니다.
+        // (예전에는 여기서 조용히 실패해 영영 인식이 안 됐습니다)
+        native = null
+        stat.engine = 'jsQR (내장 실패)'
+        stat.lastError = e?.message || String(e)
+        report()
+      }
+    }
+
+    // 2) 자바스크립트 인식기
+    try {
       const scale = Math.min(1, MAX / Math.max(video.videoWidth, video.videoHeight))
       canvas.width = Math.round(video.videoWidth * scale)
       canvas.height = Math.round(video.videoHeight * scale)
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const code = jsQR(img.data, img.width, img.height, {
-        inversionAttempts: 'dontInvert',
-      })
-      if (code?.data) onFound(code.data)
-    } catch {
-      // 한 프레임 실패는 무시하고 다음 프레임으로 갑니다.
+      // attemptBoth: 반전된(흰 바탕/검은 코드가 뒤집힌) 화면에서도 읽습니다.
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' })
+      if (code?.data) {
+        stat.decodes++
+        stat.lastText = code.data
+        report()
+        onFound(code.data)
+      } else if (stat.frames % 4 === 0) {
+        report()
+      }
+    } catch (e) {
+      stat.lastError = e?.message || String(e)
+      report()
     }
   }
 
-  raf = requestAnimationFrame(tick)
+  timer = setInterval(tick, INTERVAL)
   return () => {
     stopped = true
-    cancelAnimationFrame(raf)
+    clearInterval(timer)
   }
 }
 

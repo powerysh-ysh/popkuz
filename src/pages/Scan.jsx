@@ -32,12 +32,25 @@ export default function Scan() {
   const [photo, setPhoto] = useState(null)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState('')
+  // 인식 상태 — 무엇이 안 되는지 화면에서 바로 보이게 합니다.
+  const [stat, setStat] = useState(null)
+  const otherQrAt = useRef(0)
 
   const handleFound = useCallback(
     (text) => {
       if (foundRef.current) return // 이미 한 마리를 띄워둔 상태
       const id = parseCatchUrl(text, CHARACTERS)
-      if (!id) return // 우리 QR이 아님 — 무시
+      if (!id) {
+        // QR은 읽혔는데 우리 것이 아닙니다. 조용히 무시하면 "왜 안 되지?"가
+        // 되므로, 읽히고 있다는 사실만 짧게 알려줍니다.
+        const now = Date.now()
+        if (now - otherQrAt.current > 2500) {
+          otherQrAt.current = now
+          setToast('다른 QR이에요 — 팝꾸즈 카드를 비춰주세요')
+          setTimeout(() => setToast(''), 2200)
+        }
+        return
+      }
       const character = findCharacter(id)
       const already = has(id)
       foundRef.current = character
@@ -49,6 +62,7 @@ export default function Scan() {
 
   // 시연·점검용: #/scan?demo=chokku 로 열면 카메라 없이 발견 연출을 볼 수 있습니다.
   // (회의에서 보여줄 때, 그리고 카메라가 없는 환경에서 화면을 확인할 때 씁니다.)
+  const debug = params.get('debug') === '1'
   const demo = params.get('demo')
   const demoShown = useRef(false)
   useEffect(() => {
@@ -83,7 +97,7 @@ export default function Scan() {
         /* 자동재생 차단 — playsInline 속성으로 대부분 해결됩니다 */
       }
       setReady(true)
-      stopScanRef.current = scanLoop(v, handleFound)
+      stopScanRef.current = scanLoop(v, handleFound, setStat)
     })()
 
     return () => {
@@ -201,6 +215,25 @@ export default function Scan() {
         <div className="scan-hint">
           <span className="radar" />
           {ready ? '팝꾸즈를 찾는 중… 부스의 QR을 비춰보세요' : '카메라를 켜는 중…'}
+        </div>
+      )}
+
+      {/* 인식 상태 — ?debug=1 을 붙이면 자세히 보입니다 */}
+      {!found && !photo && stat && (
+        <div className="scan-stat">
+          {debug ? (
+            <>
+              엔진 {stat.engine} · 프레임 {stat.frames} · 인식 {stat.decodes}
+              {stat.lastText ? <><br />읽음: {stat.lastText.slice(0, 60)}</> : null}
+              {stat.lastError ? <><br />오류: {stat.lastError.slice(0, 60)}</> : null}
+            </>
+          ) : (
+            <>
+              {stat.decodes > 0
+                ? `QR ${stat.decodes}개 읽음`
+                : `탐지 중 ${stat.frames}`}
+            </>
+          )}
         </div>
       )}
 
