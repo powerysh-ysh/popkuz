@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
-import { syncEnabled } from '../lib/sync'
+import { checkConnection, syncEnabled } from '../lib/sync'
 
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
@@ -10,6 +11,15 @@ import { syncEnabled } from '../lib/sync'
 export default function Staff() {
   const { resetAll, state, count, code } = useHunt()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const [conn, setConn] = useState({ ok: null, reason: '확인 중…' })
+
+  useEffect(() => {
+    let alive = true
+    checkConnection().then((r) => alive && setConn(r))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   return (
     <div className="staff">
@@ -68,8 +78,17 @@ export default function Staff() {
                 <td>{code}</td>
               </tr>
               <tr>
-                <td>서버 동기화</td>
-                <td>{syncEnabled ? '켜짐' : '꺼짐 (로컬 전용)'}</td>
+                <td>통계 서버</td>
+                <td>
+                  {conn.ok === null && '⏳ 확인 중…'}
+                  {conn.ok === true && '✅ 정상 기록 중'}
+                  {conn.ok === false && (
+                    <span style={{ color: syncEnabled ? '#FF8787' : '#8E949C' }}>
+                      {syncEnabled ? '⚠️ ' : '— '}
+                      {conn.reason}
+                    </span>
+                  )}
+                </td>
               </tr>
             </tbody>
           </table>

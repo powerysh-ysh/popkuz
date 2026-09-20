@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import * as storage from './storage'
-import { syncCatch, syncHunter } from './sync'
+import { syncCatch, syncDone, syncHunter } from './sync'
 import { TOTAL } from '../data/characters'
 
 const Ctx = createContext(null)
@@ -19,8 +19,9 @@ export function HuntProvider({ children }) {
     const { state: next, isNew } = storage.addCatch(id)
     setState(next)
     if (isNew) {
-      syncCatch(next, id)
+      // 닉네임 없이 QR부터 찍은 사람도 참여자로 세야 하므로 함께 기록합니다.
       syncHunter(next)
+      syncCatch(next, id)
     }
     return { state: next, isNew }
   }, [])
@@ -28,7 +29,7 @@ export function HuntProvider({ children }) {
   const finish = useCallback(() => {
     const next = storage.markDone()
     setState(next)
-    syncHunter(next)
+    syncDone(next)
     return next
   }, [])
 
