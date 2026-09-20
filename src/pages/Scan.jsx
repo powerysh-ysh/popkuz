@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CHARACTERS, TOTAL, findCharacter } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/scanner'
+import { sharePhoto, takePhoto } from '../lib/photo'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -27,6 +28,10 @@ export default function Scan() {
   // 발견한 캐릭터를 화면에 띄운 상태. { character, isNew }
   const [found, setFound] = useState(null)
   const foundRef = useRef(null)
+  // 찍은 사진 { url, blob, character }
+  const [photo, setPhoto] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [toast, setToast] = useState('')
 
   const handleFound = useCallback(
     (text) => {
@@ -105,6 +110,35 @@ export default function Scan() {
     setFound(null)
   }
 
+  /** 카메라 화면에 캐릭터를 얹어 한 장 찍습니다. */
+  async function shoot() {
+    const c = foundRef.current
+    if (!c || busy) return
+    setBusy(true)
+    buzz(35)
+    try {
+      const blob = await takePhoto(videoRef.current, c)
+      if (blob) setPhoto({ url: URL.createObjectURL(blob), blob, character: c })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function savePhoto() {
+    if (!photo || busy) return
+    setBusy(true)
+    const r = await sharePhoto(photo.blob, photo.character)
+    setBusy(false)
+    if (r === 'saved') setToast('사진을 저장했어요')
+    else if (r === 'failed') setToast('저장에 실패했어요')
+    if (r !== 'shared') setTimeout(() => setToast(''), 2400)
+  }
+
+  function closePhoto() {
+    if (photo?.url) URL.revokeObjectURL(photo.url)
+    setPhoto(null)
+  }
+
   if (error) {
     return (
       <div className="shell">
@@ -170,6 +204,23 @@ export default function Scan() {
         </div>
       )}
 
+      {/* 찍은 사진 */}
+      {photo && (
+        <div className="photo-view">
+          <img src={photo.url} alt="찍은 사진" className="photo-img" />
+          <div className="photo-actions">
+            <button className="btn btn-primary" onClick={savePhoto} disabled={busy}>
+              저장 · 공유하기
+            </button>
+            <button className="btn btn-ghost" onClick={closePhoto}>
+              다시 찍기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="scan-toast">{toast}</div>}
+
       {/* 발견! */}
       {found && (
         <div className="scan-found">
@@ -188,15 +239,20 @@ export default function Scan() {
 
           <p className="scan-found-name">{found.character.name}</p>
 
-          {found.isNew ? (
-            <button className="btn btn-primary scan-catch" onClick={grab}>
-              탭해서 잡기!
+          <div className="scan-actions">
+            {found.isNew ? (
+              <button className="btn btn-primary" onClick={grab}>
+                탭해서 잡기!
+              </button>
+            ) : (
+              <button className="btn btn-ghost" onClick={dismiss}>
+                계속 찾기
+              </button>
+            )}
+            <button className="btn btn-photo" onClick={shoot} disabled={busy}>
+              📸 같이 사진 찍기
             </button>
-          ) : (
-            <button className="btn btn-ghost scan-catch" onClick={dismiss}>
-              계속 찾기
-            </button>
-          )}
+          </div>
         </div>
       )}
     </div>
