@@ -106,6 +106,26 @@ export async function checkConnection() {
  */
 export async function diagnoseWrite() {
   if (!syncEnabled) return { ok: false, detail: '환경변수 없음' }
+
+  // 서버가 이 요청을 어떤 DB 역할로 처리하는지 먼저 확인합니다.
+  // RLS 정책은 역할에 걸리므로, 역할을 모르면 원인을 못 찾습니다.
+  let role = '(확인 불가)'
+  try {
+    const r = await fetch(`${URL_BASE}/rest/v1/rpc/whoami`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+      },
+      body: '{}',
+    })
+    const t = await r.text()
+    role = r.ok ? t.replace(/"/g, '') : `조회실패 HTTP ${r.status}`
+  } catch {
+    role = '(요청 실패)'
+  }
+
   const id =
     crypto?.randomUUID?.() ?? `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}`
   try {
@@ -122,10 +142,10 @@ export async function diagnoseWrite() {
     const body = await res.text()
     return {
       ok: res.ok,
-      detail: `HTTP ${res.status}${body ? ' · ' + body.slice(0, 220) : ''}`,
+      detail: `역할=${role} · HTTP ${res.status}${body ? ' · ' + body.slice(0, 200) : ''}`,
     }
   } catch (e) {
-    return { ok: false, detail: `요청 실패: ${e?.message || e}` }
+    return { ok: false, detail: `역할=${role} · 요청 실패: ${e?.message || e}` }
   }
 }
 
