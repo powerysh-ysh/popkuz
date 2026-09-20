@@ -23,6 +23,8 @@ export default function App() {
       <Route path="/staff" element={<Staff />} />
       {/* 인쇄 없이 시연할 때 쓰는 화면 QR 보드 */}
       <Route path="/qr" element={<QrBoard />} />
+      {/* 짧은 QR 주소 (#/q7) — 다른 경로와 겹치지 않도록 두 글자만 */}
+      <Route path="/:id" element={<Catch />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

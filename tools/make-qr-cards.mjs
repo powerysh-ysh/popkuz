@@ -30,6 +30,8 @@ if (!base) {
 // A5 세로 300dpi
 const W = 1748
 const H = 2480
+const DPI = 300
+const mm = (v) => Math.round((v / 25.4) * DPI)
 const OUT = 'print'
 const FONT = 'Malgun Gothic' // 윈도우 기본 한글 글꼴
 
@@ -41,7 +43,7 @@ const esc = (s) =>
 let i = 0
 for (const c of CHARACTERS) {
   i++
-  const url = `${base}/#/c/${c.id}?k=${c.token}`
+  const url = `${base}/#/${c.short}`
 
   // QR — 여백(margin)은 카드 레이아웃에서 주므로 최소로 둡니다.
   const qrPng = await QRCode.toBuffer(url, {
@@ -114,7 +116,7 @@ for (const c of CHARACTERS) {
     const cx = X0 + col * CELL_W
     const cy = Y0 + row * CELL_H
 
-    const qr = await QRCode.toBuffer(`${base}/#/c/${c.id}?k=${c.token}`, {
+    const qr = await QRCode.toBuffer(`${base}/#/${c.short}`, {
       type: 'png',
       errorCorrectionLevel: 'H',
       margin: 1,
@@ -186,7 +188,7 @@ const guide = [
   '',
   ...CHARACTERS.map(
     (c, n) =>
-      `${String(n + 1).padStart(2, '0')}. ${c.name} (${c.en})\n    부착: ${c.spot}\n    주소: ${base}/#/c/${c.id}?k=${c.token}\n`
+      `${String(n + 1).padStart(2, '0')}. ${c.name} (${c.en})\n    부착: ${c.spot}\n    주소: ${base}/#/${c.short}\n`
   ),
   '인쇄: A5 세로 / 300dpi / 배율 100%',
   '3일간 쓰므로 각 2장씩 여분 인쇄를 권장합니다.',
@@ -280,7 +282,7 @@ console.log(`  부착 위치 안내: ${OUT}/부착위치.txt\n`)
 {
   await mkdir('public/qr', { recursive: true })
   for (const c of CHARACTERS) {
-    await QRCode.toFile(path.join('public/qr', `${c.id}.png`), `${base}/#/c/${c.id}?k=${c.token}`, {
+    await QRCode.toFile(path.join('public/qr', `${c.id}.png`), `${base}/#/${c.short}`, {
       errorCorrectionLevel: 'H',
       margin: 2,
       width: 560,
@@ -288,4 +290,61 @@ console.log(`  부착 위치 안내: ${OUT}/부착위치.txt\n`)
     })
   }
   console.log(`  ✓ public/qr/*.png            화면 표시용 (앱 #/qr 에서 사용)`)
+}
+
+// ── 키캡·태그용 미니 QR 라벨 시트 ───────────────────────────
+// 키캡(가로 18mm)에 직접 붙이거나, 키캡에 매다는 태그에 쓰는 작은 QR입니다.
+// 작게 인쇄할수록 오류정정 레벨을 낮춰 모듈 수를 줄이는 편이 잘 읽힙니다.
+// (레벨 H = 41x41, 레벨 M + 짧은 주소 = 25x25)
+{
+  const AW = 2480
+  const AH = 3508
+  const LABEL = mm(20) // 라벨 한 변 20mm — 18mm 키캡보다 살짝 크게
+  const COLS = 8
+  const GAP = mm(4)
+  const X0 = mm(12)
+  const Y0 = mm(34)
+  const PER = 16 // 캐릭터당 16장
+
+  const layers = []
+  let row = 0
+  for (const c of CHARACTERS) {
+    const qr = await QRCode.toBuffer(`${base}/#/${c.short}`, {
+      errorCorrectionLevel: 'M', // 작게 인쇄하므로 모듈 수를 줄입니다
+      margin: 1,
+      width: LABEL,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+    for (let i = 0; i < PER; i++) {
+      const col = i % COLS
+      const r = row + Math.floor(i / COLS)
+      layers.push({
+        input: qr,
+        left: Math.round(X0 + col * (LABEL + GAP)),
+        top: Math.round(Y0 + r * (LABEL + GAP + mm(6))),
+      })
+    }
+    // 줄 라벨
+    layers.push({
+      input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${AW}" height="60">
+        <text x="${X0}" y="44" font-family="${FONT}" font-size="40" font-weight="bold"
+              fill="${c.colorDark}">${esc(c.name)} · ${c.short}</text></svg>`),
+      left: 0,
+      top: Math.round(Y0 + (row + 2) * (LABEL + GAP + mm(6)) - mm(4)),
+    })
+    row += 2
+    // 줄 간격 확보
+    row += 0.35
+  }
+
+  const bg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${AW}" height="${AH}">
+    <rect width="${AW}" height="${AH}" fill="#ffffff"/>
+    <text x="${X0}" y="${mm(16)}" font-family="${FONT}" font-size="64" font-weight="bold"
+          fill="#1b1d21">팝꾸즈 미니 QR 라벨 (20mm)</text>
+    <text x="${X0}" y="${mm(25)}" font-family="${FONT}" font-size="36" fill="#868d95">
+      키캡에 매다는 태그·카드용 · 캐릭터당 16장 · 오려서 사용</text>
+  </svg>`)
+
+  await sharp(bg).composite(layers).png().toFile(path.join(OUT, '08-미니QR라벨.png'))
+  console.log(`  ✓ ${'print/08-미니QR라벨.png'.padEnd(26)} 키캡·태그용 20mm 라벨 80장`)
 }

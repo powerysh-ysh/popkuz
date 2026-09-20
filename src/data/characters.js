@@ -8,6 +8,7 @@
 export const CHARACTERS = [
   {
     id: 'chokku',
+    short: 'q7', // 키캡처럼 작게 인쇄할 때 쓰는 짧은 주소
     token: 'sb01',
     name: '초꾸',
     en: 'CHOKKU',
@@ -29,6 +30,7 @@ export const CHARACTERS = [
   },
   {
     id: 'ppakku',
+    short: 'm3', // 키캡처럼 작게 인쇄할 때 쓰는 짧은 주소
     token: 'sb02',
     name: '빠꾸',
     en: 'PPAKKU',
@@ -50,6 +52,7 @@ export const CHARACTERS = [
   },
   {
     id: 'nokku',
+    short: 'z5', // 키캡처럼 작게 인쇄할 때 쓰는 짧은 주소
     token: 'sb03',
     name: '노꾸',
     en: 'NOKKU',
@@ -71,6 +74,7 @@ export const CHARACTERS = [
   },
   {
     id: 'heenkku',
+    short: 'b8', // 키캡처럼 작게 인쇄할 때 쓰는 짧은 주소
     token: 'sb04',
     name: '흰꾸',
     en: 'HEENKKU',
@@ -92,6 +96,7 @@ export const CHARACTERS = [
   },
   {
     id: 'kkumkku',
+    short: 'v2', // 키캡처럼 작게 인쇄할 때 쓰는 짧은 주소
     token: 'sb05',
     name: '꿈꾸',
     en: 'KKUMKKU',
@@ -117,4 +122,10 @@ export const TOTAL = CHARACTERS.length
 
 export function findCharacter(id) {
   return CHARACTERS.find((c) => c.id === id) || null
+}
+
+/** 짧은 주소(#/q7)로 캐릭터를 찾습니다. */
+export function findByShort(code) {
+  const s = String(code || '').toLowerCase()
+  return CHARACTERS.find((c) => c.short === s) || null
 }

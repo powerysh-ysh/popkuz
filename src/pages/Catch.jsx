@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { findCharacter, TOTAL } from '../data/characters'
+import { findByShort, findCharacter, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
@@ -23,8 +23,12 @@ export default function Catch() {
   // 어떤 캐릭터를 처리했는지를 기억해야 합니다.
   const capturedId = useRef(null)
 
-  const character = findCharacter(id)
-  const tokenOk = character && params.get('k') === character.token
+  // 두 형식을 모두 받습니다.
+  //   긴 형식  /c/chokku?k=sb01  — 먼저 만든 인쇄물
+  //   짧은 형식 /q7              — 키캡처럼 작게 인쇄할 때 (QR이 29x29로 작아짐)
+  const byShort = findByShort(id)
+  const character = byShort || findCharacter(id)
+  const tokenOk = byShort ? true : Boolean(character) && params.get('k') === character.token
 
   useEffect(() => {
     if (!character || !tokenOk) return

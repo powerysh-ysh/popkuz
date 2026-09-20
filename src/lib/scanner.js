@@ -181,10 +181,21 @@ export function scanLoop(video, onFound, onStatus) {
  */
 export function parseCatchUrl(text, characters) {
   try {
-    const m = String(text).match(/#\/c\/([a-z]+)\?k=([A-Za-z0-9]+)/)
-    if (!m) return null
-    const c = characters.find((x) => x.id === m[1] && x.token === m[2])
-    return c ? c.id : null
+    const t = String(text)
+    // 짧은 형식 — 키캡처럼 작게 인쇄할 때 (#/q7)
+    const short = t.match(/#\/([a-z0-9]{2})(?:[/?#]|$)/i)
+    if (short) {
+      const sc = short[1].toLowerCase()
+      const c = characters.find((x) => x.short === sc)
+      if (c) return c.id
+    }
+    // 긴 형식 — 먼저 만든 인쇄물 호환 (#/c/chokku?k=sb01)
+    const long = t.match(/#\/c\/([a-z]+)\?k=([A-Za-z0-9]+)/)
+    if (long) {
+      const c = characters.find((x) => x.id === long[1] && x.token === long[2])
+      if (c) return c.id
+    }
+    return null
   } catch {
     return null
   }
