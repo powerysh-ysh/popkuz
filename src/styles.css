@@ -574,3 +574,238 @@ button {
     animation: none;
   }
 }
+
+/* ── 탐지기 (앱 내 카메라) ────────────────────── */
+.scan {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+.scan-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 카메라 영상 위에 살짝 어둡게 — 글자와 캐릭터가 잘 보이도록 */
+.scan-dim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.05) 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  pointer-events: none;
+}
+
+.scan-top {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scan-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 20px;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+
+.scan-progress {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 99px;
+  padding: 10px 16px;
+  backdrop-filter: blur(6px);
+}
+
+.scan-progress .count {
+  color: #fff;
+}
+
+.scan-progress .pip {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.scan-progress .pip.on {
+  background: #6ee7a0;
+}
+
+/* ── 조준 프레임 ── */
+.scan-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(68vw, 300px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -54%);
+  pointer-events: none;
+}
+
+.scan-frame .c {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border: 5px solid rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+}
+
+.scan-frame .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.scan-frame .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.scan-frame .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.scan-frame .br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.scan-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #6ee7a0, transparent);
+  box-shadow: 0 0 16px #22a45d;
+  animation: sweep 2.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0%, 100% { top: 6%; }
+  50% { top: 92%; }
+}
+
+/* ── 하단 안내 ── */
+.scan-hint {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 15px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.radar {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6ee7a0;
+  box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.7);
+  animation: ping 1.6s ease-out infinite;
+}
+
+@keyframes ping {
+  0% { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.7); }
+  70% { box-shadow: 0 0 0 16px rgba(110, 231, 160, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0); }
+}
+
+/* ── 발견 연출 ── */
+.scan-found {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom));
+  text-align: center;
+}
+
+.scan-found-kicker {
+  font-size: 19px;
+  margin: 0 0 6px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  animation: popIn 0.4s cubic-bezier(0.22, 1.4, 0.4, 1) both;
+}
+
+.scan-target {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 300px;
+  height: 300px;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.scan-target .ring {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  border: 4px solid;
+  opacity: 0.5;
+  animation: ringOut 2s ease-out infinite;
+}
+
+.scan-target .ring.r2 {
+  animation-delay: 1s;
+}
+
+@keyframes ringOut {
+  0% { transform: scale(0.72); opacity: 0.75; }
+  100% { transform: scale(1.22); opacity: 0; }
+}
+
+.bob {
+  animation: popIn 0.5s cubic-bezier(0.22, 1.4, 0.4, 1) both,
+             bob 1.6s ease-in-out 0.5s infinite;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.3) rotate(-12deg); opacity: 0; }
+  70% { transform: scale(1.1) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+
+.scan-found-name {
+  font-size: 40px;
+  color: #fff;
+  margin: 2px 0 18px;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.7);
+}
+
+.scan-catch {
+  width: min(88vw, 340px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-line,
+  .radar,
+  .scan-target .ring,
+  .bob {
+    animation: none;
+  }
+}

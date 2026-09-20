@@ -57,7 +57,10 @@ export default function Home() {
             </p>
             <Progress count={count} total={TOTAL} />
           </div>
-          <Link className="btn btn-primary" to="/dex">
+          <Link className="btn btn-primary" to="/scan">
+            🔍 팝꾸즈 탐지기 켜기
+          </Link>
+          <Link className="btn btn-ghost" to="/dex">
             도감 열기
           </Link>
           {complete && (
@@ -95,7 +98,9 @@ export default function Home() {
           </li>
           <li>
             <b>2</b>
-            <span>QR을 휴대폰으로 찍으면 그 친구를 만날 수 있어요.</span>
+            <span>
+              <strong>탐지기</strong>를 켜고 QR을 비추면 그 자리에서 잡을 수 있어요.
+            </span>
           </li>
           <li>
             <b>3</b>

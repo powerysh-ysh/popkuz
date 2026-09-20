@@ -83,9 +83,14 @@ export default function Catch() {
             🎉 도감 완성! 경품 받기
           </button>
         ) : (
-          <Link className="btn btn-primary" to="/dex">
-            도감 확인하기 (남은 {TOTAL - newCount}마리)
-          </Link>
+          <>
+            <Link className="btn btn-primary" to="/scan">
+              🔍 탐지기로 계속 찾기 (남은 {TOTAL - newCount}마리)
+            </Link>
+            <Link className="btn btn-ghost" to="/dex">
+              도감 확인하기
+            </Link>
+          </>
         )}
         {!started && (
           <Link className="btn btn-ghost" to="/">
