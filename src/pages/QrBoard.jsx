@@ -32,6 +32,20 @@ export default function QrBoard() {
         </p>
       </div>
 
+      {/* 참가용 — 이걸 먼저 찍어야 게임에 들어옵니다 */}
+      <div className="joincard">
+        <div>
+          <h2>① 먼저 이걸 찍어서 접속</h2>
+          <p>가입 없음 · 앱 설치 없음</p>
+          <code>powerysh-ysh.github.io/popkuz</code>
+        </div>
+        <img src={`${base}qr/_join.png`} alt="참가 QR" width={720} height={720} />
+      </div>
+
+      <h2 className="section-title">
+        ② 찾아서 찍을 팝꾸즈 QR <span className="line" />
+      </h2>
+
       <div className="qrgrid">
         {CHARACTERS.map((c, i) => (
           <div className="qrcard" key={c.id} style={{ borderColor: c.color }}>

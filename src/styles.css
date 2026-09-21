@@ -1130,3 +1130,49 @@ button {
     opacity: 0;
   }
 }
+
+/* 참가용 QR 카드 (화면 QR 보드 상단) */
+.joincard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #1b1d21;
+  color: #fff;
+  border-radius: 20px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+}
+
+.joincard h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: #fff;
+}
+
+.joincard p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #C7CCD2;
+}
+
+.joincard code {
+  font-size: 12px;
+  color: #8CE99A;
+  word-break: break-all;
+}
+
+.joincard img {
+  flex: none;
+  width: 190px;
+  height: 190px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+}
+
+@media (max-width: 520px) {
+  .joincard {
+    flex-direction: column;
+    text-align: center;
+  }
+}
