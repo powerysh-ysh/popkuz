@@ -11,8 +11,8 @@
 const KEY = 'popkkus.wild.v1'
 
 /** 다음 출현까지의 대기 시간(ms). 너무 자주 나오면 QR 찾기를 방해합니다. */
-export const MIN_GAP = 20000
-export const MAX_GAP = 40000
+export const MIN_GAP = 10000
+export const MAX_GAP = 20000
 
 /** 나타난 뒤 이만큼 지나면 도망갑니다. */
 export const ESCAPE_MS = 12000
