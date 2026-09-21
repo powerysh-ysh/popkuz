@@ -4,6 +4,7 @@ import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { checkConnection, diagnoseWrite, syncEnabled } from '../lib/sync'
 import { formatTime, getBest, getMission } from '../lib/mission'
+import { getWild } from '../lib/wild'
 
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
@@ -91,6 +92,10 @@ export default function Staff() {
                 </td>
               </tr>
               <tr>
+                <td>야생 포획</td>
+                <td>{getWild().count}마리 (도감과 별개)</td>
+              </tr>
+              <tr>
                 <td>최고 기록</td>
                 <td>{getBest() != null ? formatTime(getBest()) : '—'}</td>
               </tr>
@@ -138,7 +143,7 @@ export default function Staff() {
             style={{ marginTop: 10 }}
             onClick={() => {
               if (
-                confirm('이 기기의 도감 · 미션 · 최고 기록을 모두 지웁니다. 계속할까요?')
+                confirm('이 기기의 도감 · 미션 · 기록 · 야생 포획을 모두 지웁니다. 계속할까요?')
               ) {
                 resetAll()
                 location.reload()

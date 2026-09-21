@@ -69,12 +69,12 @@ export function markDone() {
 }
 
 /**
- * 이 기기의 진행 상황을 전부 지웁니다 (도감 + 미션 + 최고 기록).
+ * 이 기기의 진행 상황을 전부 지웁니다 (도감 + 미션 + 최고 기록 + 야생).
  * 시연이나 테스트 뒤에 스태프가 누릅니다. 하나라도 남으면
  * 다음 사람이 이어받은 상태로 시작하게 됩니다.
  */
 export function reset() {
-  for (const k of [KEY, 'popkkus.mission.v1', 'popkkus.best.v1']) {
+  for (const k of [KEY, 'popkkus.mission.v1', 'popkkus.best.v1', 'popkkus.wild.v1']) {
     try {
       localStorage.removeItem(k)
     } catch {

@@ -1176,3 +1176,14 @@ button {
     text-align: center;
   }
 }
+
+/* 야생 포획 수 (도감과 구분되는 별도 지표) */
+.scan-wild {
+  flex: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #8CE99A;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 99px;
+  backdrop-filter: blur(6px);
+}

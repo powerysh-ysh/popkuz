@@ -5,6 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/scanner'
 import BallThrow from '../components/BallThrow'
 import { elapsed, formatTime, getMission, markMission } from '../lib/mission'
+import { ESCAPE_MS, addWild, getWild, nextGap, pickWild } from '../lib/wild'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -42,6 +43,10 @@ export default function Scan() {
   // 아직 못 만난 캐릭터의 위치 힌트를 돌아가며 보여줍니다.
   // QR을 찾는 동안 화면이 비어 있으면 금방 지루해집니다.
   const [hintIndex, setHintIndex] = useState(0)
+  // 야생 출현 — 도감과 분리된 재미 요소
+  const [wildCount, setWildCount] = useState(() => getWild().count)
+  const wildTimer = useRef(0)
+  const escapeTimer = useRef(0)
 
   const handleFound = useCallback(
     (text) => {
@@ -61,8 +66,9 @@ export default function Scan() {
       const character = findCharacter(id)
       const already = has(id)
       foundRef.current = character
+      clearTimeout(escapeTimer.current) // QR 쪽이 우선입니다
       buzz(already ? 30 : [40, 60, 80])
-      setFound({ character, isNew: !already })
+      setFound({ character, isNew: !already, wild: false })
     },
     [has]
   )
@@ -77,6 +83,43 @@ export default function Scan() {
     const t = setInterval(() => setHintIndex((n) => n + 1), 3200)
     return () => clearInterval(t)
   }, [])
+
+  /**
+   * 야생 출현 예약.
+   * 미션 중에는 걸지 않습니다 — 기록 경쟁을 방해하면 안 됩니다.
+   * 이미 무언가 떠 있으면 다음 기회로 미룹니다.
+   */
+  const scheduleWild = useCallback(() => {
+    clearTimeout(wildTimer.current)
+    wildTimer.current = setTimeout(() => {
+      const m = getMission()
+      if (m && !m.doneAt) return scheduleWild()
+      if (foundRef.current) return scheduleWild()
+      const c = pickWild(CHARACTERS)
+      foundRef.current = c
+      buzz([25, 40, 25])
+      setFound({ character: c, isNew: true, wild: true })
+      // 일정 시간 안에 못 잡으면 도망갑니다 — 긴장감이 생깁니다.
+      escapeTimer.current = setTimeout(() => {
+        if (foundRef.current === c) {
+          foundRef.current = null
+          setFound(null)
+          setToast('야생 팝꾸즈가 도망갔어요!')
+          setTimeout(() => setToast(''), 2000)
+        }
+        scheduleWild()
+      }, ESCAPE_MS)
+    }, nextGap())
+  }, [])
+
+  useEffect(() => {
+    if (demo || error) return
+    scheduleWild()
+    return () => {
+      clearTimeout(wildTimer.current)
+      clearTimeout(escapeTimer.current)
+    }
+  }, [demo, error, scheduleWild])
 
   // 시연·점검용: #/scan?demo=chokku 로 열면 카메라 없이 발견 연출을 볼 수 있습니다.
   // (회의에서 보여줄 때, 그리고 카메라가 없는 환경에서 화면을 확인할 때 씁니다.)
@@ -129,6 +172,21 @@ export default function Scan() {
   function grab() {
     const c = foundRef.current
     if (!c) return
+
+    // 야생은 도감에 넣지 않습니다. 도감은 부스의 QR로만 채워집니다.
+    if (found?.wild) {
+      clearTimeout(escapeTimer.current)
+      const w = addWild()
+      setWildCount(w.count)
+      buzz([50, 40, 120])
+      foundRef.current = null
+      setFound(null)
+      setToast('야생 포획! 도감은 부스의 QR로 채워요')
+      setTimeout(() => setToast(''), 2600)
+      scheduleWild()
+      return
+    }
+
     const { state } = capture(c.id)
     buzz([50, 40, 120])
 
@@ -244,6 +302,7 @@ export default function Scan() {
             <Progress count={count} total={TOTAL} />
           )}
         </div>
+        {wildCount > 0 && <span className="scan-wild">🌿 {wildCount}</span>}
       </div>
 
       {/* 하단 안내 */}
@@ -303,9 +362,13 @@ export default function Scan() {
         <div className="scan-found">
           <p
             className="scan-found-kicker"
-            style={{ color: found.isNew ? '#FFE066' : '#CED4DA' }}
+            style={{ color: found.wild ? '#8CE99A' : found.isNew ? '#FFE066' : '#CED4DA' }}
           >
-            {found.isNew ? '✨ 팝꾸즈 발견!' : '👋 이미 만난 친구'}
+            {found.wild
+              ? '🌿 야생 팝꾸즈 출현! (도감엔 안 들어가요)'
+              : found.isNew
+                ? '✨ 팝꾸즈 발견!'
+                : '👋 이미 만난 친구'}
           </p>
 
           <div className={`scan-target${caught ? ' caught' : ''}`} ref={targetRef}>
