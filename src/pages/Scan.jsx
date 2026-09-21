@@ -39,6 +39,9 @@ export default function Scan() {
   // 미션 모드가 켜져 있으면 목표와 경과 시간을 위에 띄웁니다.
   const [mission, setMission] = useState(() => getMission())
   const [, tickTime] = useState(0)
+  // 아직 못 만난 캐릭터의 위치 힌트를 돌아가며 보여줍니다.
+  // QR을 찾는 동안 화면이 비어 있으면 금방 지루해집니다.
+  const [hintIndex, setHintIndex] = useState(0)
 
   const handleFound = useCallback(
     (text) => {
@@ -69,6 +72,11 @@ export default function Scan() {
     const t = setInterval(() => tickTime((n) => n + 1), 200)
     return () => clearInterval(t)
   }, [mission])
+
+  useEffect(() => {
+    const t = setInterval(() => setHintIndex((n) => n + 1), 3200)
+    return () => clearInterval(t)
+  }, [])
 
   // 시연·점검용: #/scan?demo=chokku 로 열면 카메라 없이 발견 연출을 볼 수 있습니다.
   // (회의에서 보여줄 때, 그리고 카메라가 없는 환경에서 화면을 확인할 때 씁니다.)
@@ -242,7 +250,30 @@ export default function Scan() {
       {!found && (
         <div className="scan-hint">
           <span className="radar" />
-          {ready ? '팝꾸즈를 찾는 중… 부스의 QR을 비춰보세요' : '카메라를 켜는 중…'}
+          {!ready ? (
+            '카메라를 켜는 중…'
+          ) : (
+            (() => {
+              // 미션 중이면 미션 목표를, 아니면 아직 못 만난 캐릭터를 안내합니다.
+              const pool =
+                mission && !mission.doneAt
+                  ? mission.targets.filter((id) => !mission.got.includes(id))
+                  : CHARACTERS.filter((c) => !has(c.id)).map((c) => c.id)
+              if (!pool.length) return '팝꾸즈를 찾는 중…'
+              const c = CHARACTERS.find((x) => x.id === pool[hintIndex % pool.length])
+              return (
+                <span>
+                  <strong style={{ color: c.color }}>{c.name}</strong>
+                  {' '}
+                  {c.spot} 쪽에 있어요
+                  <br />
+                  <span style={{ fontSize: 13, opacity: 0.8 }}>
+                    남은 팝꾸즈 {pool.length}마리 · QR을 비춰보세요
+                  </span>
+                </span>
+              )
+            })()
+          )}
         </div>
       )}
 
