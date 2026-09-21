@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { checkConnection, diagnoseWrite, syncEnabled } from '../lib/sync'
+import { formatTime, getBest, getMission } from '../lib/mission'
 
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
@@ -48,7 +49,7 @@ export default function Staff() {
                   <td style={{ width: 28, color: '#8E949C' }}>{i + 1}</td>
                   <td style={{ width: 56, color: c.color }}>{c.name}</td>
                   <td style={{ fontSize: 12, color: '#C7CCD2', wordBreak: 'break-all' }}>
-                    /#/c/{c.id}?k={c.token}
+                    /#/{c.short}
                     <div style={{ color: '#7C848C', marginTop: 2 }}>📍 {c.spot}</div>
                   </td>
                 </tr>
@@ -58,7 +59,7 @@ export default function Staff() {
           <p style={{ fontSize: 12, color: '#8E949C', marginBottom: 0 }}>
             기준 주소: {origin || '(배포 후 확정)'}
             <br />
-            QR 이미지는 <code>tools/qr.html</code>을 브라우저로 열어 인쇄하세요.
+            화면 QR 보드: <code>{origin}/#/qr</code> (인쇄 없이 시연할 때)
           </p>
         </div>
 
@@ -77,6 +78,21 @@ export default function Staff() {
               <tr>
                 <td>코드</td>
                 <td>{code}</td>
+              </tr>
+              <tr>
+                <td>미션</td>
+                <td>
+                  {(() => {
+                    const m = getMission()
+                    if (!m) return '없음'
+                    if (m.doneAt) return '완료됨'
+                    return `진행 중 (${m.got.length}/${m.targets.length})`
+                  })()}
+                </td>
+              </tr>
+              <tr>
+                <td>최고 기록</td>
+                <td>{getBest() != null ? formatTime(getBest()) : '—'}</td>
               </tr>
               <tr>
                 <td>통계 서버</td>
@@ -121,10 +137,15 @@ export default function Staff() {
             className="btn btn-ghost"
             style={{ marginTop: 10 }}
             onClick={() => {
-              if (confirm('이 기기의 진행 상황을 모두 지웁니다. 계속할까요?')) resetAll()
+              if (
+                confirm('이 기기의 도감 · 미션 · 최고 기록을 모두 지웁니다. 계속할까요?')
+              ) {
+                resetAll()
+                location.reload()
+              }
             }}
           >
-            진행 초기화 (테스트용)
+            진행 초기화 (도감 · 미션 · 기록)
           </button>
         </div>
 
