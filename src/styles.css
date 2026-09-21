@@ -1034,3 +1034,99 @@ button {
   opacity: 1;
   font-weight: bold;
 }
+
+/* ── 공 던지기 ────────────────────────────── */
+.ball-zone {
+  position: relative;
+  width: min(92vw, 380px);
+  height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  touch-action: none; /* 드래그할 때 화면이 같이 움직이지 않게 */
+}
+
+.ball-hint {
+  margin: 0 0 14px;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.ball {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  padding: 0;
+  background: radial-gradient(circle at 34% 28%, #fff 0 6%, var(--ball) 22% 100%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), inset -6px -8px 16px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  will-change: transform;
+}
+
+.ball:active {
+  cursor: grabbing;
+}
+
+.ball-band {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 50%;
+  height: 8px;
+  margin-top: -4px;
+  background: #fff;
+}
+
+.ball-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 4px var(--ball);
+}
+
+.ball-giveup {
+  position: absolute;
+  bottom: -58px;
+  width: 200px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+/* 공에 맞았을 때 — 흔들리며 잡힘 */
+.scan-target.caught .ring,
+.scan-target.caught .hop-shadow {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.wobble {
+  animation: wobble 0.85s ease-in-out both;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes wobble {
+  0%   { transform: scale(1) rotate(0deg); }
+  15%  { transform: scale(0.82) rotate(-14deg); }
+  30%  { transform: scale(0.86) rotate(12deg); }
+  45%  { transform: scale(0.8) rotate(-10deg); }
+  60%  { transform: scale(0.84) rotate(8deg); }
+  75%  { transform: scale(0.78) rotate(-5deg); }
+  100% { transform: scale(0.1) rotate(0deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wobble {
+    animation: none;
+    opacity: 0;
+  }
+}

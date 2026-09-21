@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CHARACTERS, TOTAL, findCharacter } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/scanner'
-import { sharePhoto, takePhoto } from '../lib/photo'
+import BallThrow from '../components/BallThrow'
 import { elapsed, formatTime, getMission, markMission } from '../lib/mission'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
@@ -29,10 +29,10 @@ export default function Scan() {
   // 발견한 캐릭터를 화면에 띄운 상태. { character, isNew }
   const [found, setFound] = useState(null)
   const foundRef = useRef(null)
-  // 찍은 사진 { url, blob, character }
-  const [photo, setPhoto] = useState(null)
-  const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState('')
+  // 공 던지기 판정을 위해 캐릭터 위치를 참조합니다.
+  const targetRef = useRef(null)
+  const [caught, setCaught] = useState(false)
   // 인식 상태 — 무엇이 안 되는지 화면에서 바로 보이게 합니다.
   const [stat, setStat] = useState(null)
   const otherQrAt = useRef(0)
@@ -153,33 +153,15 @@ export default function Scan() {
     setFound(null)
   }
 
-  /** 카메라 화면에 캐릭터를 얹어 한 장 찍습니다. */
-  async function shoot() {
-    const c = foundRef.current
-    if (!c || busy) return
-    setBusy(true)
-    buzz(35)
-    try {
-      const blob = await takePhoto(videoRef.current, c)
-      if (blob) setPhoto({ url: URL.createObjectURL(blob), blob, character: c })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function savePhoto() {
-    if (!photo || busy) return
-    setBusy(true)
-    const r = await sharePhoto(photo.blob, photo.character)
-    setBusy(false)
-    if (r === 'saved') setToast('사진을 저장했어요')
-    else if (r === 'failed') setToast('저장에 실패했어요')
-    if (r !== 'shared') setTimeout(() => setToast(''), 2400)
-  }
-
-  function closePhoto() {
-    if (photo?.url) URL.revokeObjectURL(photo.url)
-    setPhoto(null)
+  /** 공이 맞았을 때 — 잡기 연출 후 실제로 획득 처리 */
+  function onBallHit() {
+    if (caught) return
+    setCaught(true)
+    buzz([60, 40, 140])
+    setTimeout(() => {
+      setCaught(false)
+      grab()
+    }, 850)
   }
 
   if (error) {
@@ -265,7 +247,7 @@ export default function Scan() {
       )}
 
       {/* 인식 상태 — ?debug=1 을 붙이면 자세히 보입니다 */}
-      {!found && !photo && stat && (
+      {!found && stat && (
         <div className="scan-stat">
           {debug ? (
             <>
@@ -283,21 +265,6 @@ export default function Scan() {
         </div>
       )}
 
-      {/* 찍은 사진 */}
-      {photo && (
-        <div className="photo-view">
-          <img src={photo.url} alt="찍은 사진" className="photo-img" />
-          <div className="photo-actions">
-            <button className="btn btn-primary" onClick={savePhoto} disabled={busy}>
-              저장 · 공유하기
-            </button>
-            <button className="btn btn-ghost" onClick={closePhoto}>
-              다시 찍기
-            </button>
-          </div>
-        </div>
-      )}
-
       {toast && <div className="scan-toast">{toast}</div>}
 
       {/* 발견! */}
@@ -310,30 +277,30 @@ export default function Scan() {
             {found.isNew ? '✨ 팝꾸즈 발견!' : '👋 이미 만난 친구'}
           </p>
 
-          <button className="scan-target" onClick={grab} aria-label={`${found.character.name} 잡기`}>
+          <div className={`scan-target${caught ? ' caught' : ''}`} ref={targetRef}>
             <span className="ring" style={{ borderColor: found.character.color }} />
             <span className="ring r2" style={{ borderColor: found.character.color }} />
             {/* 그림자를 따로 두고 캐릭터와 반대로 움직여야 진짜로 뛰는 것처럼 보입니다 */}
             <span className="hop-shadow" />
-            <Popkku character={found.character} size={240} className="hop" />
-          </button>
+            <Popkku character={found.character} size={240} className={caught ? 'wobble' : 'hop'} />
+          </div>
 
           <p className="scan-found-name">{found.character.name}</p>
 
-          <div className="scan-actions">
-            {found.isNew ? (
-              <button className="btn btn-primary" onClick={grab}>
-                탭해서 잡기!
-              </button>
-            ) : (
+          {found.isNew ? (
+            <BallThrow
+              targetRef={targetRef}
+              color={found.character.color}
+              onHit={onBallHit}
+              onGiveUp={grab}
+            />
+          ) : (
+            <div className="scan-actions">
               <button className="btn btn-ghost" onClick={dismiss}>
                 계속 찾기
               </button>
-            )}
-            <button className="btn btn-photo" onClick={shoot} disabled={busy}>
-              📸 같이 사진 찍기
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
