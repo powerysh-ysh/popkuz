@@ -3,11 +3,15 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { applySharedSpots } from '../lib/spots'
+import { COUPON_TERMS, formatWon, modeConfig, planOf } from '../lib/mode'
+import { unusedTotal } from '../lib/coupon'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
 export default function Home() {
   const { started, start, count, complete, state } = useHunt()
+  const mode = modeConfig()
+  const store = mode.id === 'store'
   const [name, setName] = useState('')
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -45,9 +49,19 @@ export default function Home() {
           팝꾸즈를 <em>찾아라!</em>
         </h1>
         <p>
-          부스 안에 팝꾸즈 {TOTAL}마리가 숨어 있어요.
-          <br />
-          모두 찾아서 도감을 완성해 주세요!
+          {store ? (
+            <>
+              매장 주변에 팝꾸즈 {TOTAL}마리가 숨어 있어요.
+              <br />
+              찾을 때마다 <strong>매장 할인권</strong>을 드려요!
+            </>
+          ) : (
+            <>
+              부스 안에 팝꾸즈 {TOTAL}마리가 숨어 있어요.
+              <br />
+              모두 찾아서 도감을 완성해 주세요!
+            </>
+          )}
         </p>
       </section>
 
@@ -74,9 +88,17 @@ export default function Home() {
           <Link className="btn btn-primary" to="/scan">
             🔍 팝꾸즈 탐지기 켜기
           </Link>
-          <Link className="btn btn-mission" to="/mission">
-            ⚡ 스피드 미션 도전
-          </Link>
+          {store ? (
+            <Link className="btn btn-ghost" to="/wallet">
+              🎟 내 할인권 {formatWon(unusedTotal())}
+            </Link>
+          ) : (
+            mode.hasMission && (
+              <Link className="btn btn-mission" to="/mission">
+                ⚡ 스피드 미션 도전
+              </Link>
+            )
+          )}
           <Link className="btn btn-ghost" to="/dex">
             도감 열기
           </Link>
@@ -106,36 +128,85 @@ export default function Home() {
 
       <div className="card" style={{ marginTop: 14 }}>
         <h2 style={{ margin: '0 0 14px', fontSize: 18 }}>어떻게 하나요?</h2>
-        <ul className="rules">
-          <li>
-            <b>1</b>
-            <span>
-              부스를 돌아다니며 <strong>팝꾸즈 QR</strong>을 찾으세요.
-            </span>
-          </li>
-          <li>
-            <b>2</b>
-            <span>
-              <strong>탐지기</strong>를 켜고 QR을 비추면 그 자리에서 잡을 수 있어요.
-            </span>
-          </li>
-          <li>
-            <b>3</b>
-            <span>
-              {TOTAL}마리를 모두 모으면 <strong>진화형이 해금</strong>돼요!
-            </span>
-          </li>
-          <li>
-            <b>4</b>
-            <span>완주 화면을 스태프에게 보여주고 경품을 받아가세요 🎁</span>
-          </li>
-        </ul>
+        {store ? (
+          <ul className="rules">
+            <li>
+              <b>1</b>
+              <span>매장 주변을 돌며 <strong>팝꾸즈 QR</strong>을 찾으세요.</span>
+            </li>
+            <li>
+              <b>2</b>
+              <span>
+                찾을 때마다 <strong>할인권</strong>을 드려요. 어려운 팝꾸즈일수록 금액이 커져요.
+              </span>
+            </li>
+            <li>
+              <b>3</b>
+              <span>
+                <strong>꿈꾸</strong>는 앞선 넷을 모두 만나야 나타나요 (최고 {formatWon(10000)}).
+              </span>
+            </li>
+            <li>
+              <b>4</b>
+              <span>매장에 들어와 직원에게 보여주고 키캡을 데려가세요 🎁</span>
+            </li>
+          </ul>
+        ) : (
+          <ul className="rules">
+            <li>
+              <b>1</b>
+              <span>
+                부스를 돌아다니며 <strong>팝꾸즈 QR</strong>을 찾으세요.
+              </span>
+            </li>
+            <li>
+              <b>2</b>
+              <span>
+                <strong>탐지기</strong>를 켜고 QR을 비추면 그 자리에서 잡을 수 있어요.
+              </span>
+            </li>
+            <li>
+              <b>3</b>
+              <span>
+                {TOTAL}마리를 모두 모으면 <strong>진화형이 해금</strong>돼요!
+              </span>
+            </li>
+            <li>
+              <b>4</b>
+              <span>완주 화면을 스태프에게 보여주고 경품을 받아가세요 🎁</span>
+            </li>
+          </ul>
+        )}
       </div>
 
+      {store && (
+        <div className="card" style={{ marginTop: 14 }}>
+          <h2 style={{ margin: '0 0 12px', fontSize: 16 }}>할인권 사용 안내</h2>
+          <ul className="rules">
+            {COUPON_TERMS.map((t) => (
+              <li key={t}>
+                <b>·</b>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <p className="footnote">
-        2026 산학협력 EXPO · 킨텍스 제2전시장
-        <br />
-        동명대학교 창업학과 시작박스 부스
+        {store ? (
+          <>
+            {mode.where}
+            <br />
+            동명대학교 창업학과 시작박스
+          </>
+        ) : (
+          <>
+            2026 산학협력 EXPO · 킨텍스 제2전시장
+            <br />
+            동명대학교 창업학과 시작박스 부스
+          </>
+        )}
       </p>
     </div>
   )

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { findByShort, findCharacter, TOTAL } from '../data/characters'
+import { CHARACTERS, findByShort, findCharacter, TOTAL } from '../data/characters'
+import { COUPON_TERMS, formatWon, isStore, planOf } from '../lib/mode'
+import { issueCoupon } from '../lib/coupon'
 import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
@@ -16,7 +18,7 @@ export default function Catch() {
   const { id } = useParams()
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const { capture, count, started } = useHunt()
+  const { capture, count, started, has } = useHunt()
   const [result, setResult] = useState(null)
   // "이미 처리했는가"를 boolean으로 두면, 이 화면에 머문 채 다음 QR을 찍었을 때
   // (라우터가 같은 컴포넌트를 재사용하므로) 두 번째 캐릭터가 잡히지 않습니다.
@@ -30,12 +32,55 @@ export default function Catch() {
   const character = byShort || findCharacter(id)
   const tokenOk = byShort ? true : Boolean(character) && params.get('k') === character.token
 
+  const store = isStore()
+  const plan = character ? planOf(character.id) : null
+
+  // 팝업스토어 모드에서 꿈꾸는 앞의 넷을 모두 찾아야 열립니다.
+  // 운으로 최고 보상을 가져가지 못하게 하려는 장치입니다.
+  const locked =
+    store &&
+    plan?.order === 5 &&
+    CHARACTERS.some((c) => c.id !== character.id && !has(c.id))
+
+  const [coupon, setCoupon] = useState(null)
+
   useEffect(() => {
-    if (!character || !tokenOk) return
+    if (!character || !tokenOk || locked) return
     if (capturedId.current === character.id) return // StrictMode 이중 실행 방지
     capturedId.current = character.id
     setResult(capture(character.id))
-  }, [character, tokenOk, capture])
+    if (store) setCoupon(issueCoupon(character.id))
+  }, [character, tokenOk, locked, store, capture])
+
+  if (character && locked) {
+    const left = CHARACTERS.filter((c) => c.id !== character.id && !has(c.id))
+    return (
+      <div className="catch" style={{ background: character.colorLight }}>
+        <p className="kicker" style={{ color: character.colorDark }}>
+          🔒 아직 열리지 않았어요
+        </p>
+        <Popkku character={character} size={200} silhouette />
+        <h1>{character.name}</h1>
+        <p className="quote">
+          앞선 팝꾸즈를 모두 만나야
+          <br />
+          모습을 드러냅니다.
+        </p>
+        <div className="statline">
+          {left.map((c) => (
+            <span key={c.id} className="chip">
+              {c.name} 남음
+            </span>
+          ))}
+        </div>
+        <div className="actions">
+          <Link className="btn btn-primary" to="/dex">
+            남은 팝꾸즈 확인하기
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   if (!character || !tokenOk) {
     return (
@@ -70,12 +115,22 @@ export default function Catch() {
 
       <p className="quote">&ldquo;{character.quote}&rdquo;</p>
 
-      <div className="statline">
-        <span className="chip">
-          {character.elementIcon} {character.element}
-        </span>
-        <span className="chip">필살기 · {character.skill}</span>
-      </div>
+      {store && coupon ? (
+        <div className="coupon-card" style={{ borderColor: character.color }}>
+          <p className="coupon-amt" style={{ color: character.colorDark }}>
+            {formatWon(coupon.amount)} 할인권
+          </p>
+          <p className="coupon-code">{coupon.code}</p>
+          <p className="coupon-terms">{COUPON_TERMS[0]}</p>
+        </div>
+      ) : (
+        <div className="statline">
+          <span className="chip">
+            {character.elementIcon} {character.element}
+          </span>
+          <span className="chip">필살기 · {character.skill}</span>
+        </div>
+      )}
 
       <div style={{ width: '100%', maxWidth: 340, marginBottom: 18 }}>
         <Progress count={newCount} total={TOTAL} />
@@ -91,9 +146,15 @@ export default function Catch() {
             <Link className="btn btn-primary" to="/scan">
               🔍 탐지기로 계속 찾기 (남은 {TOTAL - newCount}마리)
             </Link>
-            <Link className="btn btn-ghost" to="/dex">
-              도감 확인하기
-            </Link>
+            {store ? (
+              <Link className="btn btn-ghost" to="/wallet">
+                🎟 내 할인권 보기
+              </Link>
+            ) : (
+              <Link className="btn btn-ghost" to="/dex">
+                도감 확인하기
+              </Link>
+            )}
           </>
         )}
         {!started && (

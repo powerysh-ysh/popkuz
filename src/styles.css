@@ -1226,3 +1226,72 @@ button {
   line-height: 1.6;
   word-break: break-all;
 }
+
+/* ── 할인권 (팝업스토어 모드) ─────────────── */
+.coupon-card {
+  border: 3px solid;
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.coupon-amt {
+  margin: 0;
+  font-size: 34px;
+}
+
+.coupon-code {
+  margin: 4px 0 8px;
+  font-size: 26px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.coupon-terms {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.ticket {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 3px solid;
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.ticket.used {
+  background: #f4f6f8;
+  box-shadow: none;
+}
+
+.ticket-amt {
+  margin: 0;
+  font-size: 26px;
+}
+
+.ticket-code {
+  margin: 2px 0;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.ticket.used .ticket-code {
+  color: #9aa1a8;
+  text-decoration: line-through;
+}
+
+.ticket-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
