@@ -12,7 +12,8 @@
     "qr": "node tools/make-qr-cards.mjs",
     "stickers": "node tools/make-stickers.mjs",
     "ar": "node tools/make-3d.mjs",
-    "team": "node tools/make-teamsheet.mjs"
+    "team": "node tools/make-teamsheet.mjs",
+    "guide": "node tools/make-guide.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
