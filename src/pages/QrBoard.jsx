@@ -40,7 +40,7 @@ export default function QrBoard() {
           <p>가입 없음 · 앱 설치 없음</p>
           <code>powerysh-ysh.github.io/popkuz</code>
         </div>
-        <img src={`${base}qr/_join.png`} alt="참가 QR" width={720} height={720} />
+        <img src={`${base}qr/join.png`} alt="참가 QR" width={720} height={720} />
       </div>
 
       <h2 className="section-title">
