@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
+import { applySharedSpots } from '../lib/spots'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -9,6 +10,19 @@ export default function Home() {
   const { started, start, count, complete, state } = useHunt()
   const [name, setName] = useState('')
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+
+  // 스태프가 공유한 장소 설정을 받아 적용합니다.
+  // #/?s=... 가 정식이지만, 주소를 손으로 옮기다 ?s=... 가 # 앞에 오는
+  // 경우가 흔해서 둘 다 받습니다.
+  const shared =
+    params.get('s') ||
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('s')
+      : null)
+  useEffect(() => {
+    if (shared) applySharedSpots(shared)
+  }, [shared])
 
   function onSubmit(e) {
     e.preventDefault()

@@ -155,6 +155,12 @@ export default function Staff() {
         </div>
 
         <div className="stack">
+          <Link className="btn btn-ghost" to="/setup">
+            📍 장소 설정 (시연 공간에 맞추기)
+          </Link>
+          <Link className="btn btn-ghost" to="/qr">
+            화면 QR 보드
+          </Link>
           <Link className="btn btn-ghost" to="/">
             관람객 화면으로
           </Link>

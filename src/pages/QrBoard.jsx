@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
+import { spotOf } from '../lib/spots'
 import Popkku from '../components/Popkku'
 
 /**
@@ -54,7 +55,7 @@ export default function QrBoard() {
               <div>
                 <strong style={{ color: c.colorDark, fontSize: 21 }}>{c.name}</strong>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {String(i + 1).padStart(2, '0')} · {c.spot}
+                  {String(i + 1).padStart(2, '0')} · {spotOf(c)}
                 </div>
               </div>
             </div>

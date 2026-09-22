@@ -15,7 +15,7 @@ export const MIN_GAP = 10000
 export const MAX_GAP = 20000
 
 /** 나타난 뒤 이만큼 지나면 도망갑니다. */
-export const ESCAPE_MS = 12000
+export const ESCAPE_MS = 7000
 
 export function nextGap() {
   return MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)

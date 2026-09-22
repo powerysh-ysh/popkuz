@@ -9,6 +9,7 @@ import {
   getMission,
   startMission,
 } from '../lib/mission'
+import { spotOf } from '../lib/spots'
 import Popkku from '../components/Popkku'
 
 /**
@@ -131,7 +132,7 @@ export default function Mission() {
                 <h3 style={{ color: done ? c.colorDark : '#8E949C' }}>
                   {done ? `${c.name} ✓` : c.name}
                 </h3>
-                <p className="spot">📍 {c.spot}</p>
+                <p className="spot">📍 {spotOf(c)}</p>
               </div>
             )
           })}

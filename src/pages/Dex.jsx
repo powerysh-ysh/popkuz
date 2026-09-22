@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { arSupported, launchAR } from '../lib/ar'
+import { spotOf } from '../lib/spots'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -45,7 +46,7 @@ export default function Dex() {
               <p className="sub">
                 {caught ? `${c.elementIcon} ${c.element}` : '아직 만나지 못했어요'}
               </p>
-              {!caught && <p className="spot">📍 {c.spot}</p>}
+              {!caught && <p className="spot">📍 {spotOf(c)}</p>}
               {caught && ar && (
                 <button
                   className="arbtn"

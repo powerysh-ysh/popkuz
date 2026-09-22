@@ -6,6 +6,7 @@ import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/s
 import BallThrow from '../components/BallThrow'
 import { elapsed, formatTime, getMission, markMission } from '../lib/mission'
 import { ESCAPE_MS, addWild, getWild, nextGap, pickWild } from '../lib/wild'
+import { spotOf } from '../lib/spots'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -324,7 +325,7 @@ export default function Scan() {
                 <span>
                   <strong style={{ color: c.color }}>{c.name}</strong>
                   {' '}
-                  {c.spot} 쪽에 있어요
+                  {spotOf(c)} 쪽에 있어요
                   <br />
                   <span style={{ fontSize: 13, opacity: 0.8 }}>
                     남은 팝꾸즈 {pool.length}마리 · QR을 비춰보세요
