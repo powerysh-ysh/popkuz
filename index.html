@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1DB954" />
+
+    <title>팝꾸즈를 찾아라! | 시작박스</title>
+    <meta name="description" content="시작박스 부스에 숨은 팝꾸즈 5마리를 찾아 도감을 채우고 경품을 받아가세요! 2026 산학협력 EXPO 동명대학교 창업학과." />
+
+    <!-- 카카오톡/SNS 공유 미리보기 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="팝꾸즈를 찾아라! | 시작박스" />
+    <meta property="og:description" content="부스에 숨은 팝꾸즈 5마리를 찾아 도감을 완성하면 진화형이 해금됩니다!" />
+    <meta property="og:image" content="./og.png" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-B778MSmd.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CqWGxn56.css">
+  </head>
+  <body>
+    <!--
+      앱이 시작되면 아래 내용은 지워집니다.
+      혹시 시작에 실패하면(구형 웹뷰 등) 흰 화면 대신 이 안내가 남습니다.
+    -->
+    <div id="root">
+      <div id="boot" style="
+        font-family: system-ui, -apple-system, 'Malgun Gothic', sans-serif;
+        max-width: 420px; margin: 0 auto; padding: 48px 24px; text-align: center;
+        color: #1b1d21; line-height: 1.7;">
+        <div style="font-size:40px">📦</div>
+        <p style="font-size:18px; font-weight:bold; margin:12px 0 4px">
+          팝꾸즈를 찾아라
+        </p>
+        <p id="boot-msg" style="color:#868d95; font-size:15px">불러오는 중…</p>
+        <div id="boot-help" style="display:none; margin-top:18px">
+          <p style="font-size:15px; color:#4a5057">
+            이 브라우저에서는 게임이 열리지 않아요.<br />
+            오른쪽 위 <b>⋮ 메뉴 → 다른 브라우저로 열기</b>를 눌러<br />
+            <b>크롬</b>이나 <b>사파리</b>로 열어주세요.
+          </p>
+          <p style="font-size:13px; color:#868d95; word-break:break-all">
+            powerysh-ysh.github.io/popkuz
+          </p>
+        </div>
+      </div>
+    </div>
+    <script>
+      // 8초 안에 앱이 뜨지 않거나 오류가 나면 안내를 보여줍니다.
+      (function () {
+        function help(reason) {
+          var b = document.getElementById('boot');
+          if (!b) return; // 앱이 이미 화면을 그렸다면 아무것도 하지 않습니다
+          var m = document.getElementById('boot-msg');
+          var h = document.getElementById('boot-help');
+          if (m) m.textContent = reason || '열지 못했어요';
+          if (h) h.style.display = 'block';
+        }
+        window.addEventListener('error', function () { help('열지 못했어요'); });
+        setTimeout(function () { help('시간이 오래 걸리네요'); }, 8000);
+      })();
+    </script>
+  </body>
+</html>
