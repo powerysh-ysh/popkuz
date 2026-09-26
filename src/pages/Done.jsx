@@ -3,8 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
-import { totalScore } from '../lib/score'
-import { syncScore } from '../lib/sync'
+import { totalScore, syncTotalIfHigher } from '../lib/score'
 
 export default function Done() {
   const { complete, finish, code, state } = useHunt()
@@ -15,7 +14,7 @@ export default function Done() {
     if (complete) {
       finish()
       if (!synced.current) {
-        syncScore(state, score)
+        syncTotalIfHigher()
         synced.current = true
       }
     }

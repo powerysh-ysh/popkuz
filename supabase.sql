@@ -164,3 +164,36 @@ language sql stable as $$
   limit n;
 $$;
 grant execute on function hunt_top(int) to public;
+
+-- ── 랭킹 — 완주 후 점수 반영 ──────────────────────────────────────────────
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'hunt_scores' and column_name = 'id') then
+    alter table hunt_scores drop constraint if exists hunt_scores_pkey;
+    alter table hunt_scores add column id bigserial primary key;
+  end if;
+end $$;
+
+create index if not exists hunt_scores_hunter_id_idx on hunt_scores (hunter_id);
+
+alter table hunt_scores drop constraint if exists hunt_scores_score_check;
+alter table hunt_scores add constraint hunt_scores_score_check check (score between 0 and 100000);
+
+create or replace function hunt_top(n int default 10)
+returns table (nickname text, score int)
+security definer
+set search_path = public
+language sql stable as $$
+  select nickname, score
+  from (
+    select distinct on (hunter_id)
+      left(nickname, 12) as nickname,
+      score
+    from hunt_scores
+    where (created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date
+    order by hunter_id, score desc
+  ) t
+  order by score desc
+  limit n;
+$$;
+grant execute on function hunt_top(int) to public;

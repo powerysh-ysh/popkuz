@@ -1,3 +1,6 @@
+import { load } from './storage'
+import { syncScore } from './sync'
+
 export function saveScore(id, result) {
   try {
     const raw = localStorage.getItem('popkkus.score.v1')
@@ -6,6 +9,7 @@ export function saveScore(id, result) {
     if (result.score > prev) {
       data[id] = { score: result.score, grade: result.grade, at: new Date().toISOString() }
       localStorage.setItem('popkkus.score.v1', JSON.stringify(data))
+      syncTotalIfHigher()
     }
   } catch {
     // ignore
@@ -49,6 +53,7 @@ export function addBonus(n, reason) {
       data.log = data.log.slice(0, 50)
     }
     localStorage.setItem('popkkus.bonus.v1', JSON.stringify(data))
+    syncTotalIfHigher()
   } catch {
     // ignore
   }
@@ -62,5 +67,22 @@ export function bonusTotal() {
     return data.total || 0
   } catch {
     return 0
+  }
+}
+
+export function syncTotalIfHigher() {
+  try {
+    const state = load()
+    if (state.doneAt && state.hunterId) {
+      const total = totalScore()
+      const sentRaw = localStorage.getItem('popkkus.sent.v1')
+      const sent = sentRaw ? parseInt(sentRaw, 10) : -1
+      if (total > sent) {
+        syncScore(state, total)
+        localStorage.setItem('popkkus.sent.v1', total.toString())
+      }
+    }
+  } catch {
+    // ignore
   }
 }

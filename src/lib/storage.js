@@ -102,6 +102,7 @@ export function reset() {
     'popkkus.score.v1', // 대결 점수
     'popkkus.bonus.v1',
     'popkkus.keycap.v1',
+    'popkkus.sent.v1',
   ]
   for (const k of KEYS) {
     try {
