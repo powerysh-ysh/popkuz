@@ -67,7 +67,7 @@ function getContext() {
     
     sfxGain = ctx.createGain()
     sfxGain.connect(masterGain)
-    sfxGain.gain.value = 0.3
+    sfxGain.gain.value = 0.4
     
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -203,7 +203,7 @@ export function playBgm(name) {
   if (name !== 'none') {
     activeBgmGain = c.createGain()
     activeBgmGain.connect(masterGain)
-    activeBgmGain.gain.value = 0.15
+    activeBgmGain.gain.value = 0.35
     
     bgmNextNoteTime = c.currentTime + 0.3
     bgmCurrentNoteIndex = 0
