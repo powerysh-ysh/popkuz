@@ -168,7 +168,7 @@ export default function Home() {
             <li>
               <b>3</b>
               <span>
-                {TOTAL}마리를 모두 모으면 <strong>진화형이 해금</strong>돼요!
+                조각을 모으면 <strong>진화</strong>시킬 수 있어요!
               </span>
             </li>
             <li>

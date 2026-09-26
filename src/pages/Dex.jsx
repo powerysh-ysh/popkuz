@@ -4,6 +4,8 @@ import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { arSupported, launchAR } from '../lib/ar'
 import { spotOf } from '../lib/spots'
+import { EVOLVE_COST, evolve, evolveStatus, rareCount, ro } from '../lib/pieces'
+import { buzz } from '../lib/scanner'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -13,6 +15,17 @@ export default function Dex() {
   // AR은 보너스입니다. 지원하지 않는 기기에서는 버튼 자체를 감춥니다.
   const [ar, setAr] = useState(false)
   useEffect(() => setAr(arSupported()), [])
+
+  // 조각은 localStorage에 있으므로, 진화 후 다시 읽도록 한 칸 돌립니다.
+  const [tick, setTick] = useState(0)
+  const rare = rareCount()
+
+  function onEvolve(c) {
+    const r = evolve(c.id)
+    if (!r.ok) return
+    buzz([60, 40, 60, 40, 140])
+    setTick((n) => n + 1)
+  }
 
   return (
     <div className="shell">
@@ -27,11 +40,18 @@ export default function Dex() {
           {state.nickname ? `${state.nickname} 탐험가님의 도감` : '팝꾸즈 도감'}
         </p>
         <Progress count={count} total={TOTAL} />
+        <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+          ✦ 반짝조각 <strong style={{ color: '#B78700' }}>{rare}개</strong> — 미션을 깨면
+          모이고, 아무 팝꾸즈에게나 쓸 수 있어요.
+        </p>
       </div>
 
-      <div className="dexgrid">
+      <div className="dexgrid" key={tick}>
         {CHARACTERS.map((c, i) => {
           const caught = has(c.id)
+          const st = evolveStatus(c.id)
+          const pct = Math.min(100, (st.own / EVOLVE_COST) * 100)
+
           return (
             <div
               key={c.id}
@@ -39,14 +59,54 @@ export default function Dex() {
               style={caught ? { borderColor: c.color } : undefined}
             >
               <span className="num">No.{String(i + 1).padStart(2, '0')}</span>
-              <Popkku character={c} size={110} silhouette={!caught} />
+              <Popkku
+                character={c}
+                size={110}
+                silhouette={!caught}
+                evolved={st.evolved}
+              />
               <h3 style={caught ? { color: c.colorDark } : { color: '#8E949C' }}>
-                {caught ? c.name : '???'}
+                {caught ? (st.evolved ? c.evo.name : c.name) : '???'}
               </h3>
               <p className="sub">
-                {caught ? `${c.elementIcon} ${c.element}` : '아직 만나지 못했어요'}
+                {!caught
+                  ? '아직 만나지 못했어요'
+                  : st.evolved
+                    ? c.evo.desc
+                    : `${c.elementIcon} ${c.element}`}
               </p>
+
               {!caught && <p className="spot">📍 {spotOf(c)}</p>}
+
+              {caught && st.evolved && <span className="evo-tag">진화 완료</span>}
+
+              {/* 조각 모으기 — 아직 진화 안 한 캐릭터만 */}
+              {caught && !st.evolved && (
+                <>
+                  <div className="piece-row">
+                    <span>조각</span>
+                    <span className="piece-bar">
+                      <i style={{ width: `${pct}%`, background: c.color }} />
+                    </span>
+                    <span>
+                      {st.own}/{EVOLVE_COST}
+                    </span>
+                  </div>
+                  <button
+                    className="evobtn"
+                    style={st.can ? { borderColor: c.color, color: c.colorDark } : undefined}
+                    disabled={!st.can}
+                    onClick={() => onEvolve(c)}
+                  >
+                    {st.can
+                      ? st.useRare > 0
+                        ? `진화 (✦${st.useRare} 사용)`
+                        : `${c.evo.name}${ro(c.evo.name)} 진화`
+                      : `조각 ${EVOLVE_COST - st.own - st.rare}개 더`}
+                  </button>
+                </>
+              )}
+
               {caught && ar && (
                 <button
                   className="arbtn"
@@ -61,35 +121,39 @@ export default function Dex() {
         })}
       </div>
 
-      <h2 className="section-title">
-        진화형 <span className="line" /> <span style={{ fontSize: 14 }}>{complete ? '해금!' : '🔒'}</span>
-      </h2>
+      <div className="card" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0, fontSize: 16 }}>조각은 어떻게 모으나요?</h2>
+        <ul className="rules">
+          <li>
+            <b>·</b>
+            <span>부스의 QR로 처음 만나면 그 팝꾸즈 조각 <strong>3개</strong></span>
+          </li>
+          <li>
+            <b>·</b>
+            <span>야생 팝꾸즈를 잡으면 그 팝꾸즈 조각 <strong>2개</strong></span>
+          </li>
+          <li>
+            <b>·</b>
+            <span>탐지기의 <strong>미션</strong>을 깨면 반짝조각 ✦ (아무 데나 쓸 수 있어요)</span>
+          </li>
+          <li>
+            <b>·</b>
+            <span>진화에는 <strong>{EVOLVE_COST}개</strong>가 필요해요</span>
+          </li>
+        </ul>
+        <div className="stack">
+          <Link className="btn btn-primary" to="/scan">
+            🔍 탐지기로 조각 모으기
+          </Link>
+        </div>
+      </div>
 
-      {complete ? (
-        <>
-          <div className="dexgrid">
-            {CHARACTERS.map((c) => (
-              <div key={c.id} className="dexcard" style={{ borderColor: c.color }}>
-                <Popkku character={c} size={110} evolved />
-                <h3 style={{ color: c.colorDark }}>{c.evo.name}</h3>
-                <p className="sub">{c.evo.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="stack">
-            <Link className="btn btn-primary" to="/done">
-              🎁 경품 받으러 가기
-            </Link>
-          </div>
-        </>
-      ) : (
-        <p className="locked-note">
-          {TOTAL}마리를 모두 만나면
-          <br />
-          <strong>진화형 {TOTAL}종</strong>이 해금됩니다!
-          <br />
-          남은 친구 <strong>{TOTAL - count}마리</strong>를 찾아주세요.
-        </p>
+      {complete && (
+        <div className="stack">
+          <Link className="btn btn-primary" to="/done">
+            🎁 경품 받으러 가기
+          </Link>
+        </div>
       )}
 
       <p className="footnote">

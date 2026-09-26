@@ -732,7 +732,9 @@ button {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 20px calc(20px + env(safe-area-inset-bottom));
+  /* 위쪽 여백은 상단 HUD(진행바) 높이만큼 비워둡니다. 「반짝 특대
+     그린박꾸」처럼 이름이 두 줄이 되면 내용이 위로 밀려 HUD를 덮습니다. */
+  padding: 78px 20px calc(20px + env(safe-area-inset-bottom));
   text-align: center;
 }
 
@@ -842,9 +844,12 @@ button {
 }
 
 .scan-found-name {
-  font-size: 40px;
+  /* 이름 길이가 「노꾸」부터 「✨ 반짝 특대 스노우박꾸」까지 차이가 커서
+     고정 크기로 두면 작은 화면에서 넘칩니다. */
+  font-size: clamp(26px, 9vw, 40px);
+  line-height: 1.15;
   color: #fff;
-  margin: 2px 0 18px;
+  margin: 2px 0 14px;
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.7);
 }
 
@@ -1186,6 +1191,207 @@ button {
   padding: 10px 14px;
   border-radius: 99px;
   backdrop-filter: blur(6px);
+}
+
+.scan-rare {
+  flex: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #FFD43B;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 99px;
+  backdrop-filter: blur(6px);
+}
+
+/* ── 중간 미션 (필드 리서치) ─────────────────
+   화면 위쪽에 얇게 깔아둡니다. 읽지 않아도 진행되므로 시야를 가리면
+   안 되고, 그렇다고 안 보이면 깼을 때 뭘 깼는지 모릅니다. */
+.scan-quest {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 74px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 13px;
+}
+
+.scan-quest .q-label {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #FFD43B;
+}
+
+.scan-quest .q-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scan-quest .q-count {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.scan-quest .q-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.scan-quest .q-bar i {
+  display: block;
+  height: 100%;
+  background: #FFD43B;
+  transition: width 0.3s ease-out;
+}
+
+.scan-reward {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  z-index: 6;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 22px;
+  border-radius: 18px;
+  background: rgba(20, 16, 0, 0.88);
+  border: 2px solid #FFD43B;
+  color: #fff;
+  text-align: center;
+  animation: popIn 0.4s cubic-bezier(0.22, 1.4, 0.4, 1) both;
+}
+
+.scan-reward strong { font-size: 17px; color: #FFD43B; }
+.scan-reward span { font-size: 13px; opacity: 0.85; }
+.scan-reward em { font-style: normal; font-size: 15px; font-weight: 700; }
+
+/* ── 도감의 조각·진화 ─────────────────────── */
+.piece-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.piece-bar {
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: 3px;
+  background: #EDEFF2;
+  overflow: hidden;
+}
+
+.piece-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease-out;
+}
+
+.evobtn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 2px solid;
+  background: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.evobtn[disabled] {
+  border-color: #E3E6EA;
+  color: #A9AFB6;
+  background: #F7F8F9;
+  cursor: default;
+}
+
+/* ── 가품 단서 ────────────────────────────
+   Popkku 겉에만 씌웁니다. 도감·완주 화면의 같은 캐릭터는 그대로여야
+   관람객이 "아까 그건 뭐가 달랐지?" 를 대조해볼 수 있습니다. */
+.tell {
+  display: block;
+  transform-origin: 50% 100%;
+}
+
+.scan-found-en {
+  margin: -2px 0 8px;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── 반짝 개체 ────────────────────────────
+   색만 바꾸면 "가품 아닌가?" 로 읽힙니다. 금빛 오라와 반짝임을 같이
+   얹어서, 이상한 게 아니라 좋은 것임을 한눈에 알게 합니다. */
+.shiny {
+  filter: hue-rotate(150deg) saturate(1.5)
+    drop-shadow(0 0 14px rgba(255, 215, 64, 0.9));
+  animation: shinyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes shinyPulse {
+  0%, 100% { filter: hue-rotate(150deg) saturate(1.5) drop-shadow(0 0 12px rgba(255, 215, 64, 0.75)); }
+  50%      { filter: hue-rotate(178deg) saturate(1.9) drop-shadow(0 0 26px rgba(255, 238, 130, 1)); }
+}
+
+.scan-found-note {
+  margin: -4px 0 10px;
+  font-size: 13px;
+  color: #FFE066;
+}
+
+.fakebtn {
+  margin: 0 0 10px;
+  padding: 9px 20px;
+  border-radius: 99px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.fakebtn:active {
+  transform: scale(0.96);
+}
+
+.evo-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: #FFF6D6;
+  color: #8a6500;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 /* ── 장소 설정 ────────────────────────────── */

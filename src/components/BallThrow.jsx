@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *   · 어린이·어르신도 할 수 있게 실패해도 계속 재시도 가능
  *   · 세 번 놓치면 "그냥 잡기" 버튼이 나와 아무도 막히지 않음
  */
-export default function BallThrow({ targetRef, color, onHit, onGiveUp }) {
+export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss }) {
   const wrapRef = useRef(null)
   const ballRef = useRef(null)
   const rafRef = useRef(0)
@@ -76,6 +76,8 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp }) {
       const out = !wrap || y > 80 || Math.abs(x) > wrap.width || y < -wrap.height * 1.4
       if (out) {
         cancelAnimationFrame(rafRef.current)
+        // 빗나가면 캐릭터가 놀라서 멀리 달아납니다.
+        onMiss?.()
         setMisses((m) => {
           const n = m + 1
           setHint(n >= 3 ? '아깝다! 아래 버튼으로 바로 잡아도 돼요' : '아깝다! 다시 던져보세요')

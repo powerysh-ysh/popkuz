@@ -13,7 +13,8 @@
     "stickers": "node tools/make-stickers.mjs",
     "ar": "node tools/make-3d.mjs",
     "team": "node tools/make-teamsheet.mjs",
-    "guide": "node tools/make-guide.mjs"
+    "guide": "node tools/make-guide.mjs",
+    "joinqr": "node tools/make-join-qr.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

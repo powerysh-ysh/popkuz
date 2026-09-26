@@ -10,12 +10,16 @@
 
 const KEY = 'popkkus.wild.v1'
 
-/** 다음 출현까지의 대기 시간(ms). 너무 자주 나오면 QR 찾기를 방해합니다. */
-export const MIN_GAP = 10000
-export const MAX_GAP = 20000
+/**
+ * 다음 출현까지의 대기 시간(ms).
+ * 한 판이 1분 안팎이라 10초를 기다리면 두세 번밖에 못 만납니다.
+ * 몰입이 끊기지 않도록 좁혔습니다.
+ */
+export const MIN_GAP = 4500
+export const MAX_GAP = 9000
 
 /** 나타난 뒤 이만큼 지나면 도망갑니다. */
-export const ESCAPE_MS = 7000
+export const ESCAPE_MS = 5000
 
 export function nextGap() {
   return MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)

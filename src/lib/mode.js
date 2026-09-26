@@ -39,7 +39,10 @@ export const MODES = {
     goal: 'coupon',
     reward: '매장 할인권',
     hasCoupon: true,
-    hasWild: false, // 할인권이 걸린 게임이라 야생은 끕니다
+    // 야생은 켜되 할인권은 주지 않습니다. 할인권은 오직 매장 주변의
+    // QR 5개로만 나옵니다 — 야생으로 돈이 나가면 안 됩니다.
+    // 야생은 진화 재료(조각)와 미션 진행에만 쓰입니다.
+    hasWild: true,
     hasMission: false,
     hasBuddy: true,
     sequential: true, // 꿈꾸는 앞의 넷을 찾아야 열립니다

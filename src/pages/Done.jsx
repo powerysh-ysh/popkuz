@@ -52,7 +52,7 @@ export default function Done() {
 
       <div className="stack">
         <Link className="btn btn-ghost" to="/dex">
-          진화형 도감 다시 보기
+          도감 · 진화 보러 가기
         </Link>
       </div>
 

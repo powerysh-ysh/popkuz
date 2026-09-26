@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { spotOf } from '../lib/spots'
+import { modeConfig } from '../lib/mode'
 import Popkku from '../components/Popkku'
 
 /**
@@ -12,6 +13,10 @@ import Popkku from '../components/Popkku'
  */
 export default function QrBoard() {
   const base = import.meta.env.BASE_URL
+  // 참가 QR은 모드마다 다른 주소(/expo, /store)를 가리켜야 합니다.
+  // 공용 주소를 쓰면 폰에 저장된 이전 모드를 그대로 따라가서,
+  // 두 행사를 같은 기간에 운영할 때 섞입니다.
+  const cfg = modeConfig()
 
   return (
     <div className="shell qrboard">
@@ -37,10 +42,17 @@ export default function QrBoard() {
       <div className="joincard">
         <div>
           <h2>① 먼저 이걸 찍어서 접속</h2>
-          <p>가입 없음 · 앱 설치 없음</p>
-          <code>powerysh-ysh.github.io/popkuz</code>
+          <p>
+            가입 없음 · 앱 설치 없음 · <strong>{cfg.name}</strong> 모드로 시작
+          </p>
+          <code>powerysh-ysh.github.io/popkuz/{cfg.id}</code>
         </div>
-        <img src={`${base}qr/join.png`} alt="참가 QR" width={720} height={720} />
+        <img
+          src={`${base}qr/join-${cfg.id}.png`}
+          alt={`${cfg.name} 참가 QR`}
+          width={720}
+          height={720}
+        />
       </div>
 
       <h2 className="section-title">

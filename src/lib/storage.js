@@ -69,13 +69,23 @@ export function markDone() {
 }
 
 /**
- * 이 기기의 진행 상황을 전부 지웁니다 (도감 + 미션 + 최고 기록 + 야생 + 할인권).
+ * 이 기기의 진행 상황을 전부 지웁니다
+ * (도감 + 미션 + 최고 기록 + 야생 + 할인권 + 조각·진화 + 중간 미션).
  * 운영 모드와 장소 설정은 스태프가 정한 값이므로 남겨둡니다.
  * 시연이나 테스트 뒤에 스태프가 누릅니다. 하나라도 남으면
  * 다음 사람이 이어받은 상태로 시작하게 됩니다.
  */
 export function reset() {
-  for (const k of [KEY, 'popkkus.mission.v1', 'popkkus.best.v1', 'popkkus.wild.v1', 'popkkus.coupons.v1']) {
+  const KEYS = [
+    KEY,
+    'popkkus.mission.v1',
+    'popkkus.best.v1',
+    'popkkus.wild.v1',
+    'popkkus.coupons.v1',
+    'popkkus.pieces.v1', // 조각 · 진화
+    'popkkus.quest.v1', // 중간 미션
+  ]
+  for (const k of KEYS) {
     try {
       localStorage.removeItem(k)
     } catch {
