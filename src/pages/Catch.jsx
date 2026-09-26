@@ -7,6 +7,9 @@ import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
+import Battle from '../components/Battle'
+import { saveScore } from '../lib/score'
+
 /**
  * QR 착지 화면. 주소 형태: /c/chokku?k=sb01
  *
@@ -20,17 +23,30 @@ export default function Catch() {
   const navigate = useNavigate()
   const { capture, count, started, has } = useHunt()
   const [result, setResult] = useState(null)
-  // "이미 처리했는가"를 boolean으로 두면, 이 화면에 머문 채 다음 QR을 찍었을 때
-  // (라우터가 같은 컴포넌트를 재사용하므로) 두 번째 캐릭터가 잡히지 않습니다.
-  // 어떤 캐릭터를 처리했는지를 기억해야 합니다.
+  
+  const [showBattle, setShowBattle] = useState(false)
+  const [battleResult, setBattleResult] = useState(null)
   const capturedId = useRef(null)
 
+  const [coupon, setCoupon] = useState(null)
+  
   // 두 형식을 모두 받습니다.
   //   긴 형식  /c/chokku?k=sb01  — 먼저 만든 인쇄물
   //   짧은 형식 /q7              — 키캡처럼 작게 인쇄할 때 (QR이 29x29로 작아짐)
   const byShort = findByShort(id)
   const character = byShort || findCharacter(id)
   const tokenOk = byShort ? true : Boolean(character) && params.get('k') === character.token
+
+  // "이미 처리했는가"를 boolean으로 두면, 이 화면에 머문 채 다음 QR을 찍었을 때 (라우터가 같은 컴포넌트를 재사용하므로) 두 번째 캐릭터가 잡히지 않습니다. 어떤 캐릭터를 처리했는지를 기억해야 합니다.
+  const prevId = useRef(character?.id)
+  if (prevId.current !== character?.id) {
+    prevId.current = character?.id
+    setShowBattle(false)
+    setBattleResult(null)
+    setResult(null)
+    setCoupon(null)
+    capturedId.current = null
+  }
 
   const store = isStore()
   const plan = character ? planOf(character.id) : null
@@ -42,15 +58,30 @@ export default function Catch() {
     plan?.order === 5 &&
     CHARACTERS.some((c) => c.id !== character.id && !has(c.id))
 
-  const [coupon, setCoupon] = useState(null)
-
   useEffect(() => {
     if (!character || !tokenOk || locked) return
     if (capturedId.current === character.id) return // StrictMode 이중 실행 방지
+    
+    if (!has(character.id) && !showBattle && !battleResult) {
+      setShowBattle(true)
+      return
+    }
+    
+    if (has(character.id) && !showBattle) {
+      capturedId.current = character.id
+      setResult(capture(character.id))
+      if (store) setCoupon(issueCoupon(character.id))
+    }
+  }, [character, tokenOk, locked, store, capture, has, showBattle, battleResult])
+
+  const handleWin = (res) => {
+    saveScore(character.id, res)
+    setBattleResult(res)
+    setShowBattle(false)
     capturedId.current = character.id
     setResult(capture(character.id))
     if (store) setCoupon(issueCoupon(character.id))
-  }, [character, tokenOk, locked, store, capture])
+  }
 
   if (character && locked) {
     const left = CHARACTERS.filter((c) => c.id !== character.id && !has(c.id))
@@ -96,6 +127,16 @@ export default function Catch() {
     )
   }
 
+  if (showBattle) {
+    return (
+      <Battle 
+        character={character} 
+        easy={store} 
+        onWin={handleWin} 
+      />
+    )
+  }
+
   const isNew = result?.isNew ?? true
   const newCount = result?.state.caught.length ?? count
   const complete = newCount >= TOTAL
@@ -114,6 +155,12 @@ export default function Catch() {
       <p className="en">{character.en}</p>
 
       <p className="quote">&ldquo;{character.quote}&rdquo;</p>
+      
+      {battleResult && (
+        <div className="battle-result" style={{ background: 'rgba(255,255,255,0.4)', padding: 12, borderRadius: 8, margin: '12px 0', textAlign: 'center' }}>
+          <strong>등급 {battleResult.grade}</strong> (점수: {battleResult.score})
+        </div>
+      )}
 
       {store && coupon ? (
         <div className="coupon-card" style={{ borderColor: character.color }}>

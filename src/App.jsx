@@ -10,6 +10,7 @@ import ModeEntry from './pages/ModeEntry'
 import Dex from './pages/Dex'
 import Done from './pages/Done'
 import Staff from './pages/Staff'
+import Rank from './pages/Rank'
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/wallet" element={<Wallet />} />
       {/* 모드 전환 진입점 — 인쇄한 QR이 모드를 정합니다 */}
       <Route path="/m/:id" element={<ModeEntry />} />
+      <Route path="/rank" element={<Rank />} />
       {/* 짧은 QR 주소 (#/q7) — 다른 경로와 겹치지 않도록 두 글자만 */}
       <Route path="/:id" element={<Catch />} />
       <Route path="*" element={<Navigate to="/" replace />} />

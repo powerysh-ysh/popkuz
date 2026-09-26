@@ -84,6 +84,7 @@ export function reset() {
     'popkkus.coupons.v1',
     'popkkus.pieces.v1', // 조각 · 진화
     'popkkus.quest.v1', // 중간 미션
+    'popkkus.score.v1', // 대결 점수
   ]
   for (const k of KEYS) {
     try {

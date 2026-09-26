@@ -1,15 +1,25 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
+import { totalScore } from '../lib/score'
+import { syncScore } from '../lib/sync'
 
 export default function Done() {
   const { complete, finish, code, state } = useHunt()
+  const synced = useRef(false)
+  const score = totalScore()
 
   useEffect(() => {
-    if (complete) finish()
-  }, [complete, finish])
+    if (complete) {
+      finish()
+      if (!synced.current) {
+        syncScore(state, score)
+        synced.current = true
+      }
+    }
+  }, [complete, finish, state, score])
 
   if (!complete) return <Navigate to="/dex" replace />
 
@@ -26,6 +36,9 @@ export default function Done() {
           도감 <em>완성!</em>
         </h1>
         <p>{state.nickname || '탐험가'}님, 팝꾸즈 5마리를 모두 만났어요 🎉</p>
+        <div style={{ fontSize: '3rem', fontWeight: 'bold', margin: '20px 0', color: 'var(--brand)' }}>
+          총점: {score}점
+        </div>
       </section>
 
       <div className="parade" aria-hidden="true">

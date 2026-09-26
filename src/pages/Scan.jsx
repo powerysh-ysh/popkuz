@@ -15,6 +15,7 @@ import { TELLS, fakeEn, rollFake } from '../lib/fake'
 import { SIZES, rollVariant, variantName, variantNote, variantPieces } from '../lib/variant'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
+import Battle from '../components/Battle'
 
 /**
  * 팝꾸즈 탐지기 — 앱 안에서 카메라를 켜고 QR을 찾습니다.
@@ -523,8 +524,23 @@ export default function Scan() {
 
       {toast && <div className="scan-toast">{toast}</div>}
 
+      {/* 대결! */}
+      {found && !found.wild && found.isNew && (
+        <Battle 
+          character={found.character}
+          transparent={true}
+          easy={modeConfig().isStore}
+          onWin={(res) => {
+            import('../lib/score').then(({ saveScore }) => {
+              saveScore(found.character.id, res)
+              grab()
+            })
+          }}
+        />
+      )}
+
       {/* 발견! */}
-      {found && (
+      {found && (found.wild || !found.isNew) && (
         <div className="scan-found">
           <p
             className="scan-found-kicker"
@@ -540,11 +556,7 @@ export default function Scan() {
           <div className={`scan-target${caught ? ' caught' : ''}`} ref={roamRef}>
             <span className="ring" style={{ borderColor: found.character.color }} />
             <span className="ring r2" style={{ borderColor: found.character.color }} />
-            {/* 그림자를 따로 두고 캐릭터와 반대로 움직여야 진짜로 뛰는 것처럼 보입니다 */}
             <span className="hop-shadow" />
-            {/* 가품은 여기에 단서가 걸립니다 (뒤집힘·색·크기).
-                Popkku 를 건드리지 않고 겉에 씌워야 도감 등 다른 화면에
-                영향이 가지 않습니다. */}
             <span
               ref={targetRef}
               className={`tell${found.variant?.shiny ? ' shiny' : ''}`}
@@ -579,16 +591,12 @@ export default function Scan() {
             <p className="scan-found-note">{variantNote(found.variant)}</p>
           )}
 
-          {/* 이건 앱의 판정이 아니라 **내가 누르는 선택지**입니다.
-              「가짜다!」 로 쓰면 앱이 가짜라고 알려주는 것처럼 읽힙니다. */}
           {found.wild && !caught && (
             <button className="fakebtn" onClick={report}>
               🧐 가짜 같은데?
             </button>
           )}
 
-          {/* 야생은 도감에 이미 있어도 잡습니다 — 조각을 주기 때문입니다.
-              isNew 만 보면 후반에는 야생을 잡을 방법이 사라집니다. */}
           {found.isNew || found.wild ? (
             <BallThrow
               targetRef={targetRef}

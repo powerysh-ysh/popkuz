@@ -138,3 +138,29 @@ order by tablename;
 -- select 잡은수, count(*) as 사람수 from (
 --   select hunter_id, count(*) as 잡은수 from hunt_catches group by 1
 -- ) t group by 1 order by 1;
+
+create table if not exists hunt_scores (
+  hunter_id uuid primary key,
+  nickname text,
+  score int not null check (score between 0 and 10000),
+  created_at timestamptz not null default now()
+);
+
+alter table hunt_scores enable row level security;
+
+drop policy if exists "public can insert scores" on hunt_scores;
+create policy "public can insert scores"
+  on hunt_scores for insert with check (true);
+
+
+create or replace function hunt_top(n int default 10)
+returns table (nickname text, score int)
+security definer
+language sql stable as $$
+  select left(nickname, 12) as nickname, score
+  from hunt_scores
+  where (created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date
+  order by score desc
+  limit n;
+$$;
+grant execute on function hunt_top(int) to public;

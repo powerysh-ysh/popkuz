@@ -175,3 +175,36 @@ export function syncDone(state) {
     done_at: state.doneAt || new Date().toISOString(),
   })
 }
+
+/** 점수 동기화 */
+export function syncScore(state, score) {
+  return insert('hunt_scores', {
+    hunter_id: state.hunterId,
+    nickname: state.nickname || null,
+    score,
+  })
+}
+
+/** 랭킹 조회 */
+export async function fetchTop(n = 10) {
+  if (!syncEnabled) return []
+  try {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+    const res = await fetch(`${URL_BASE}/rest/v1/rpc/hunt_top`, {
+      method: 'POST',
+      signal: ctl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+      },
+      body: JSON.stringify({ n }),
+    })
+    clearTimeout(timer)
+    if (!res.ok) return []
+    return await res.json()
+  } catch {
+    return []
+  }
+}
