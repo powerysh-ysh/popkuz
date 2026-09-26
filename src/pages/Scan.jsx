@@ -17,6 +17,7 @@ import { addBonus } from '../lib/score'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 import Battle from '../components/Battle'
+import * as sfx from '../lib/sfx'
 
 /**
  * 팝꾸즈 탐지기 — 앱 안에서 카메라를 켜고 QR을 찾습니다.
@@ -102,6 +103,7 @@ export default function Scan() {
       foundRef.current = character
       clearTimeout(escapeTimer.current) // QR 쪽이 우선입니다
       buzz(already ? 30 : [40, 60, 80])
+      sfx.found()
       setFound({ character, isNew: !already, wild: false })
     },
     [has]
@@ -135,6 +137,7 @@ export default function Scan() {
       // 반짝 개체는 조금 더 길게 울려서 "뭔가 다르다"를 손으로도 알립니다.
       const v = fake ? null : rollVariant()
       buzz(v?.shiny ? [30, 50, 30, 50, 30, 50, 80] : [25, 40, 25])
+      sfx.wildAppear()
       setFound({
         character: c,
         isNew: true,
@@ -253,6 +256,8 @@ export default function Scan() {
     setRare(s.rare)
     buzz([30, 40, 30, 40, 60])
     setReward(r.completed)
+    sfx.mission()
+    if (r.completed.keycap) sfx.ticket()
     
     if (r.completed.keycap) {
       setTimeout(() => setReward(null), 5000)
@@ -279,6 +284,7 @@ export default function Scan() {
           setRare(st.rare)
           addBonus(150, 'judge')
           buzz([40, 40, 40, 40, 120])
+          sfx.judgeSuccess()
           setToast(`감별 성공! ${fake.tell.hint} · 반짝조각 +2 · +150점`)
           setTimeout(() => setToast(''), 3000)
         } else {
@@ -296,6 +302,7 @@ export default function Scan() {
         const st = losePiece(c.id)
         addBonus(-100, 'fake')
         buzz([140, 60, 140])
+        sfx.fake()
         const lostText = st.lost === 'rare' ? '반짝조각 -1' : st.lost === 'piece' ? `${c.name} 조각 -1` : ''
         setToast(`속았다! 카피꾸였어요 · ${fake.tell.hint}${lostText ? ` · ${lostText}` : ''} · -100점`)
         setTimeout(() => setToast(''), 3000)

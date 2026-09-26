@@ -4,15 +4,21 @@ import { CHARACTERS } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
+import * as sfx from '../lib/sfx'
 
 export default function Done() {
   const { complete, finish, code, state } = useHunt()
   const synced = useRef(false)
+  const played = useRef(false)
   const score = totalScore()
 
   useEffect(() => {
     if (complete) {
       finish()
+      if (!played.current) {
+        sfx.complete()
+        played.current = true
+      }
       if (!synced.current) {
         syncTotalIfHigher()
         synced.current = true

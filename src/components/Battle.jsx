@@ -64,6 +64,12 @@ export default function Battle({ character, transparent = false, easy = false, o
   })
 
   useEffect(() => {
+    const prev = sfx.currentBgm()
+    sfx.playBgm('battle')
+    return () => sfx.playBgm(prev || 'explore')
+  }, [])
+
+  useEffect(() => {
     const s = stateRef.current
     const img = new Image()
     img.src = `${import.meta.env.BASE_URL}characters/${character.id}.webp`
@@ -139,6 +145,9 @@ export default function Battle({ character, transparent = false, easy = false, o
         })
       }
       
+      if (judgeText) sfx.judge(judgeText)
+      if (b.isCurve) sfx.curve()
+      
       sfx.hit()
       buzz()
       
@@ -207,7 +216,7 @@ export default function Battle({ character, transparent = false, easy = false, o
           c.y += (c.targetY - c.y) * 0.2
           if (c.timer <= 0) {
             c.phase = 1; c.timer = 600
-            sfx.hit(); buzz()
+            sfx.shake(); buzz()
           }
         } else if (c.phase >= 1 && c.phase <= 3) {
           const p = 1 - Math.max(0, c.timer) / 600
@@ -219,7 +228,7 @@ export default function Battle({ character, transparent = false, easy = false, o
                 c.phase = 4; c.timer = 500; c.shakeRot = 0
               } else {
                 c.phase++; c.timer = 600
-                sfx.hit(); buzz()
+                sfx.shake(); buzz()
               }
             } else {
               s.breakouts++
@@ -227,7 +236,7 @@ export default function Battle({ character, transparent = false, easy = false, o
               if (s.breakouts >= 3) makeTired(s)
               s.capturing = false
               s.visible = true
-              sfx.miss()
+              sfx.breakout()
               for (let i = 0; i < 20; i++) {
                 s.particles.push({
                   x: c.x, y: c.y,

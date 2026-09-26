@@ -8,6 +8,7 @@ import { EVOLVE_COST, evolve, evolveStatus, rareCount, ro } from '../lib/pieces'
 import { buzz } from '../lib/scanner'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
+import * as sfx from '../lib/sfx'
 
 export default function Dex() {
   const { has, count, complete, state } = useHunt()
@@ -24,6 +25,7 @@ export default function Dex() {
     const r = evolve(c.id)
     if (!r.ok) return
     buzz([60, 40, 60, 40, 140])
+    sfx.evolve()
     setTick((n) => n + 1)
   }
 
