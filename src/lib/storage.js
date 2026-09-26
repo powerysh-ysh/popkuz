@@ -100,6 +100,8 @@ export function reset() {
     'popkkus.pieces.v1', // 조각 · 진화
     'popkkus.quest.v1', // 중간 미션
     'popkkus.score.v1', // 대결 점수
+    'popkkus.bonus.v1',
+    'popkkus.keycap.v1',
   ]
   for (const k of KEYS) {
     try {

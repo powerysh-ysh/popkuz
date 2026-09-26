@@ -1,3 +1,5 @@
+import { addBonus } from './score.js'
+
 /**
  * 팝조각 — 포켓몬고의 "사탕"에 해당합니다.
  *
@@ -117,7 +119,24 @@ export function evolve(id) {
   s.rare -= fromRare
   s.evolved = [...s.evolved, id]
   save(s)
+  addBonus(200, 'evolve:' + id)
   return { ok: true, usedRare: fromRare }
+}
+
+export function losePiece(characterId) {
+  const s = loadPieces()
+  if (s.rare >= 1) {
+    s.rare -= 1
+    save(s)
+    return { lost: 'rare' }
+  }
+  const own = s.p[characterId] || 0
+  if (own >= 1) {
+    s.p[characterId] = own - 1
+    save(s)
+    return { lost: 'piece' }
+  }
+  return { lost: null }
 }
 
 export function clearPieces() {

@@ -9,10 +9,11 @@ import { ESCAPE_MS, addWild, getWild, nextGap, pickWild } from '../lib/wild'
 import { spotOf } from '../lib/spots'
 import { modeConfig } from '../lib/mode'
 import { useRoam } from '../lib/roam'
-import { GAIN, addPieces, addRare, rareCount } from '../lib/pieces'
+import { GAIN, addPieces, addRare, rareCount, losePiece } from '../lib/pieces'
 import { getQuest, progress } from '../lib/quest'
 import { TELLS, fakeEn, rollFake } from '../lib/fake'
 import { SIZES, rollVariant, variantName, variantNote, variantPieces } from '../lib/variant'
+import { addBonus } from '../lib/score'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 import Battle from '../components/Battle'
@@ -252,11 +253,16 @@ export default function Scan() {
     setRare(s.rare)
     buzz([30, 40, 30, 40, 60])
     setReward(r.completed)
-    setTimeout(() => setReward(null), 2800)
+    
+    if (r.completed.keycap) {
+      setTimeout(() => setReward(null), 5000)
+    } else {
+      setTimeout(() => setReward(null), 2800)
+    }
   }
 
   /** 화면의 캐릭터를 탭해서 잡습니다. */
-  function grab() {
+  function grab(kind = 'catch') {
     const c = foundRef.current
     if (!c) return
 
@@ -267,10 +273,31 @@ export default function Scan() {
       foundRef.current = null
       setFound(null)
 
+      if (kind === 'judge') {
+        if (fake) {
+          const st = addRare(2)
+          setRare(st.rare)
+          addBonus(150, 'judge')
+          buzz([40, 40, 40, 40, 120])
+          setToast(`감별 성공! ${fake.tell.hint} · 반짝조각 +2 · +150점`)
+          setTimeout(() => setToast(''), 3000)
+        } else {
+          buzz([120, 80])
+          setToast(`진짜였어요… ${c.name}이(가) 도망갔어요`)
+          setTimeout(() => setToast(''), 2600)
+          bumpQuest('miss')
+        }
+        scheduleWild()
+        return
+      }
+
       if (fake) {
         // 속았습니다. 조각도 없고 연속 기록도 끊깁니다.
+        const st = losePiece(c.id)
+        addBonus(-100, 'fake')
         buzz([140, 60, 140])
-        setToast(`앗, 가품이었어요! ${fake.tell.hint}`)
+        const lostText = st.lost === 'rare' ? '반짝조각 -1' : st.lost === 'piece' ? `${c.name} 조각 -1` : ''
+        setToast(`속았다! 카피꾸였어요 · ${fake.tell.hint}${lostText ? ` · ${lostText}` : ''} · -100점`)
         setTimeout(() => setToast(''), 3000)
         bumpQuest('miss')
         scheduleWild()
@@ -327,43 +354,17 @@ export default function Scan() {
     setFound(null)
   }
 
-  /**
-   * 「가짜다!」 — 던지기 전에 감별을 시도합니다.
-   * 맞히면 잡는 것보다 큰 보상(반짝조각), 틀리면 놓칩니다.
-   * 의심에도 대가가 있어야 아무 때나 누르지 않습니다.
-   */
-  function report() {
-    const c = foundRef.current
-    if (!c || !found?.wild) return
-    clearTimeout(escapeTimer.current)
-    const fake = found.fake
-    foundRef.current = null
-    setFound(null)
 
-    if (fake) {
-      const st = addRare(1)
-      setRare(st.rare)
-      buzz([40, 40, 40, 40, 120])
-      setToast(`감별 성공! ${fake.tell.hint} · 반짝조각 +1`)
-      setTimeout(() => setToast(''), 3000)
-    } else {
-      buzz([120, 80])
-      setToast(`진짜였어요… ${c.name}이(가) 도망갔어요`)
-      setTimeout(() => setToast(''), 2600)
-      bumpQuest('miss')
-    }
-    scheduleWild()
-  }
 
   /** 공이 맞았을 때 — 잡기 연출 후 실제로 획득 처리 */
-  function onBallHit() {
+  function onBallHit(kind) {
     if (caught) return
     setCaught(true)
     buzz([60, 40, 140])
     bumpQuest('ball')
     setTimeout(() => {
       setCaught(false)
-      grab()
+      grab(kind)
     }, 850)
   }
 
@@ -469,6 +470,12 @@ export default function Scan() {
           <strong>미션 완료!</strong>
           <span>{reward.text}</span>
           <em>반짝조각 +{reward.rare}</em>
+          {reward.keycap && (
+            <>
+              <span>🎁 3D 프린터 키캡 체험권 획득!</span>
+              <Link to="/ticket" style={{ color: '#FFE066', textDecoration: 'underline', marginTop: '4px', fontSize: '14px' }}>체험권 보기</Link>
+            </>
+          )}
         </div>
       )}
 
@@ -591,12 +598,6 @@ export default function Scan() {
             <p className="scan-found-note">{variantNote(found.variant)}</p>
           )}
 
-          {found.wild && !caught && (
-            <button className="fakebtn" onClick={report}>
-              🧐 가짜 같은데?
-            </button>
-          )}
-
           {found.isNew || found.wild ? (
             <BallThrow
               targetRef={targetRef}
@@ -604,6 +605,7 @@ export default function Scan() {
               onHit={onBallHit}
               onGiveUp={grab}
               onMiss={onBallMiss}
+              allowJudge={found.wild}
             />
           ) : (
             <div className="scan-actions">
@@ -611,6 +613,7 @@ export default function Scan() {
                 계속 찾기
               </button>
             </div>
+
           )}
         </div>
       )}

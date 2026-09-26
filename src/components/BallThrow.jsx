@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *   · 어린이·어르신도 할 수 있게 실패해도 계속 재시도 가능
  *   · 세 번 놓치면 "그냥 잡기" 버튼이 나와 아무도 막히지 않음
  */
-export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss }) {
+export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, allowJudge = false }) {
   const wrapRef = useRef(null)
   const ballRef = useRef(null)
   const rafRef = useRef(0)
@@ -21,6 +21,7 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss })
   const [flying, setFlying] = useState(false)
   const [misses, setMisses] = useState(0)
   const [hint, setHint] = useState('공을 위로 튕겨보세요!')
+  const [ballType, setBallType] = useState('catch')
 
   const reset = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
@@ -68,7 +69,7 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss })
       if (!hit && isHit()) {
         hit = true
         cancelAnimationFrame(rafRef.current)
-        onHit()
+        onHit(ballType)
         return
       }
 
@@ -138,24 +139,40 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss })
 
   return (
     <div className="ball-zone" ref={wrapRef}>
+      {allowJudge && (
+        <div className="ball-selectors">
+          <button
+            className={`btn ball-sel ${ballType === 'catch' ? 'active' : ''}`}
+            onClick={() => setBallType('catch')}
+          >
+            🔴 포획공
+          </button>
+          <button
+            className={`btn ball-sel ${ballType === 'judge' ? 'active' : ''}`}
+            onClick={() => setBallType('judge')}
+          >
+            🔍 판별공
+          </button>
+        </div>
+      )}
       <p className="ball-hint">{hint}</p>
 
       <button
         ref={ballRef}
-        className="ball"
+        className={`ball ${ballType === 'judge' ? 'ball-judge' : ''}`}
         style={{
           transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
           transition: flying ? 'none' : 'transform 0.18s ease-out',
-          '--ball': color,
+          '--ball': ballType === 'judge' ? '#FFE066' : color,
         }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
-        aria-label="공 던지기"
+        aria-label={ballType === 'judge' ? '판별공 던지기' : '공 던지기'}
       >
         <span className="ball-band" />
-        <span className="ball-dot" />
+        <span className="ball-dot">{ballType === 'judge' && '🔍'}</span>
       </button>
 
       {misses >= 3 && (

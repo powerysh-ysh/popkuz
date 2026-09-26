@@ -8,9 +8,8 @@ export default function Battle({ character, transparent = false, easy = false, o
   const canvasRef = useRef(null)
   
   const [timeLeft, setTimeLeft] = useState(easy ? 40 : 30)
-  const [hp, setHp] = useState(3)
-  const [maxHp, setMaxHp] = useState(3)
-  const [combo, setCombo] = useState(1)
+  const [hits, setHits] = useState(0)
+  const [breakouts, setBreakouts] = useState(0)
   const [tired, setTired] = useState(false)
   const [label, setLabel] = useState('')
   const [ended, setEnded] = useState(false)
@@ -23,7 +22,6 @@ export default function Battle({ character, transparent = false, easy = false, o
     vx: 0, vy: 0,
     size: 100,
     speed: easy ? 0.7 : 1,
-    hp: 3, maxHp: 3,
     visible: true,
     shield: false,
     decoys: [],
@@ -43,12 +41,26 @@ export default function Battle({ character, transparent = false, easy = false, o
     score: 0,
     misses: 0,
     hits: 0,
-    combo: 1,
     
     timeLeft: easy ? 40 : 30,
     lastTime: 0,
     winPhase: 0,
-    winTimer: 0
+    winTimer: 0,
+
+    catchRate: 0.5,
+    breakouts: 0,
+    dodging: false,
+    depth: 0.8,
+    capturing: false,
+    
+    dodgeT: 2500 + Math.random() * 1500,
+    dodgePhase: 0,
+    dodgeTimer: 0,
+    
+    capture: null,
+    judgements: [],
+    
+    initialized: false
   })
 
   useEffect(() => {
@@ -77,7 +89,7 @@ export default function Battle({ character, transparent = false, easy = false, o
       canvas.height = rect.height * dpr
       ctx.scale(dpr, dpr)
       
-      s.size = Math.min(s.W, s.H) * 0.34
+      s.size = Math.min(s.W, s.H) * 0.24
       if (s.x === 0 && s.y === 0) {
         s.x = s.W / 2
         s.y = s.H / 2
@@ -88,60 +100,74 @@ export default function Battle({ character, transparent = false, easy = false, o
     resize()
     window.addEventListener('resize', resize)
     
+    s.catchRate = { chokku: 0.55, ppakku: 0.45, nokku: 0.40, heenkku: 0.35, kkumkku: 0.30 }[character.id] || 0.5
     q.init?.(s)
-    setMaxHp(s.maxHp)
-    setHp(s.hp)
     
     const makeTired = (s) => {
       if (s.tired) return
       s.tired = true
       s.speed = 0
-      s.hp = 1
       s.visible = true
       s.shield = false
       s.decoys = []
+      s.dodging = false
+      s.dodgePhase = 0
+      s.dodgeTimer = 0
       setTired(true)
-      setHp(1)
     }
 
-    const hitTarget = (s, q, time) => {
+    const hitTarget = (s, q, time, b, hitR) => {
       s.hits++
-      s.score += 100 * s.combo
-      s.combo++
-      s.hp--
       
-      setHp(s.hp)
-      setCombo(s.combo)
+      let judgeText = ''
+      let judgeMulti = 1
+      let addedScore = 50
+      if (hitR <= 0.40) { judgeText = 'Excellent'; judgeMulti = 2; addedScore = 300 }
+      else if (hitR <= 0.65) { judgeText = 'Great'; judgeMulti = 1.6; addedScore = 200 }
+      else if (hitR <= 0.90) { judgeText = 'Nice'; judgeMulti = 1.3; addedScore = 100 }
       
-      s.hitStopUntil = time + 80
-      s.shakeFrames = 10
+      if (b.isCurve) addedScore += 100
+      s.score += addedScore
+      setHits(s.hits)
+      
+      if (judgeText || b.isCurve) {
+        s.judgements.push({
+          text: judgeText,
+          curve: b.isCurve,
+          x: s.x, y: s.y,
+          life: 1000
+        })
+      }
       
       sfx.hit()
       buzz()
       
-      for (let i = 0; i < 15; i++) {
-        s.particles.push({
-          x: s.x, y: s.y,
-          vx: (Math.random() - 0.5) * 10,
-          vy: (Math.random() - 0.5) * 10,
-          r: 3 + Math.random() * 4,
-          life: 500 + Math.random() * 200,
-          color: character.color || '#ff0000'
-        })
-      }
-      
       if (!s.tired) q.onHit?.(s)
       
-      if (s.hp <= 0) {
-        sfx.win()
-        s.winPhase = 1
+      s.capturing = true
+      s.visible = false
+      s.dodging = false
+      s.dodgePhase = 0
+      s.dodgeTimer = 0
+      
+      let p = s.catchRate * judgeMulti * (b.isCurve ? 1.7 : 1) * (1 + 0.15 * s.breakouts)
+      if (s.tired) p = 1.0
+      p = Math.min(0.95, p)
+      
+      s.capture = {
+        x: s.x, y: s.y,
+        targetY: s.H - 100,
+        phase: 0,
+        timer: 300,
+        p: Math.pow(p, 1/3),
+        shakeRot: 0
       }
+      
+      s.balls = []
     }
 
     const missTarget = (s) => {
       s.misses++
-      s.combo = 1
-      setCombo(1)
       sfx.miss()
       if (s.misses >= 6) makeTired(s)
     }
@@ -157,112 +183,211 @@ export default function Battle({ character, transparent = false, easy = false, o
         return
       }
       
-      if (time >= s.hitStopUntil) {
-        s.t += dt
-        if (s.timeLeft > 0 && !s.tired) {
-          s.timeLeft -= dt / 1000
-          if (s.timeLeft <= 0) {
-            s.timeLeft = 0
-            makeTired(s)
-          }
-          setTimeLeft(Math.ceil(s.timeLeft))
+      s.t += dt
+      
+      if (s.timeLeft > 0 && !s.tired && !s.capturing) {
+        s.timeLeft -= dt / 1000
+        if (s.timeLeft <= 0) {
+          s.timeLeft = 0
+          makeTired(s)
         }
-        
-        if (!s.tired) {
-          const dx = s.targetX - s.x
-          const dy = s.targetY - s.y
-          const dist = Math.hypot(dx, dy)
-          if (dist < 5) {
-            s.targetX = s.size / 2 + Math.random() * (s.W - s.size)
-            s.targetY = s.size / 2 + Math.random() * (s.H - s.size - 100)
-          } else {
-            const moveSpeed = (2 + Math.random() * 2) * s.speed
-            s.vx = (dx / dist) * moveSpeed
-            s.vy = (dy / dist) * moveSpeed
-            s.x += s.vx * (dt / 16.67)
-            s.y += s.vy * (dt / 16.67)
+        setTimeLeft(Math.ceil(s.timeLeft))
+      }
+      
+      for (let i = s.judgements.length - 1; i >= 0; i--) {
+        s.judgements[i].life -= dt
+        s.judgements[i].y -= dt * 0.05
+        if (s.judgements[i].life <= 0) s.judgements.splice(i, 1)
+      }
+      
+      if (s.capturing) {
+        const c = s.capture
+        c.timer -= dt
+        if (c.phase === 0) {
+          c.y += (c.targetY - c.y) * 0.2
+          if (c.timer <= 0) {
+            c.phase = 1; c.timer = 600
+            sfx.hit(); buzz()
           }
-          q.update?.(s, dt)
-        }
-        
-        for (let i = s.balls.length - 1; i >= 0; i--) {
-          const b = s.balls[i]
-          b.x += b.vx * (dt / 16.67)
-          b.y += b.vy * (dt / 16.67)
-          b.vy += 0.9 * (dt / 16.67)
-          b.s = Math.max(0.35, b.s - 0.012 * (dt / 16.67))
+        } else if (c.phase >= 1 && c.phase <= 3) {
+          const p = 1 - Math.max(0, c.timer) / 600
+          c.shakeRot = Math.sin(p * Math.PI * 4) * 0.3 * (1 - p)
           
-          let hitSomeone = false
-          if (b.vy > 0 && b.s < 0.8) {
-            if (s.visible) {
-              const pad = s.size * 0.16
-              if (b.x > s.x - s.size/2 + pad && b.x < s.x + s.size/2 - pad &&
-                  b.y > s.y - s.size/2 + pad && b.y < s.y + s.size/2 - pad) {
-                hitSomeone = true
-                if (!b.judged) {
-                  b.judged = true
-                  if (s.shield) missTarget(s)
-                  else hitTarget(s, q, time)
-                }
+          if (c.timer <= 0) {
+            if (s.tired || Math.random() < c.p) {
+              if (c.phase === 3) {
+                c.phase = 4; c.timer = 500; c.shakeRot = 0
+              } else {
+                c.phase++; c.timer = 600
+                sfx.hit(); buzz()
               }
-            }
-            if (!hitSomeone && s.decoys?.length) {
-              for (let j = 0; j < s.decoys.length; j++) {
-                const dec = s.decoys[j]
-                const pad = s.size * 0.16
-                if (b.x > dec.x - s.size/2 + pad && b.x < dec.x + s.size/2 - pad &&
-                    b.y > dec.y - s.size/2 + pad && b.y < dec.y + s.size/2 - pad) {
-                  hitSomeone = true
-                  if (!b.judged) {
-                    b.judged = true
-                    missTarget(s)
-                  }
-                  s.decoys.splice(j, 1)
-                  break
-                }
+            } else {
+              s.breakouts++
+              setBreakouts(s.breakouts)
+              if (s.breakouts >= 3) makeTired(s)
+              s.capturing = false
+              s.visible = true
+              sfx.miss()
+              for (let i = 0; i < 20; i++) {
+                s.particles.push({
+                  x: c.x, y: c.y,
+                  vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15,
+                  r: 3 + Math.random() * 4,
+                  life: 500 + Math.random() * 200,
+                  color: '#ffffff'
+                })
               }
+              s.x = s.size / 2 + Math.random() * (s.W - s.size)
+              s.y = s.H / 2 + Math.random() * (s.H / 2 - 100)
+              q.onBreakout?.(s)
             }
           }
-          if (hitSomeone || b.y > s.H + 50 || b.s <= 0.35) {
-            if (!hitSomeone && !b.judged) {
-              b.judged = true
-              missTarget(s)
+        } else if (c.phase === 4) {
+          if (c.timer <= 0) {
+            sfx.win()
+            s.winPhase = 1
+            s.capturing = false
+            for (let i = 0; i < 30; i++) {
+              s.particles.push({
+                x: c.x, y: c.y,
+                vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+                r: 4 + Math.random() * 6,
+                life: 600 + Math.random() * 300,
+                color: '#ffdd00'
+              })
             }
-            s.balls.splice(i, 1)
           }
-        }
-        
-        for (let i = s.particles.length - 1; i >= 0; i--) {
-          const p = s.particles[i]
-          p.x += p.vx * (dt/16.67)
-          p.y += p.vy * (dt/16.67)
-          p.life -= dt
-          if (p.life <= 0) s.particles.splice(i, 1)
         }
       }
       
-      draw(ctx, s, q)
+      if (!s.capturing && !s.tired) {
+        s.depth = 0.8 + Math.sin(s.t * 0.001) * 0.2
+        s.targetY = s.H * 0.7 - (1 - s.depth) * (s.H * 0.4)
+        
+        const dx = s.targetX - s.x
+        const dy = s.targetY - s.y
+        const dist = Math.hypot(dx, dy)
+        if (dist < 5) {
+          s.targetX = s.size / 2 + Math.random() * (s.W - s.size)
+        } else {
+          const moveSpeed = (2 + Math.random() * 2) * s.speed
+          s.vx = (dx / dist) * moveSpeed
+          s.vy = (dy / dist) * moveSpeed
+          s.x += s.vx * (dt / 16.67)
+          s.y += s.vy * (dt / 16.67)
+        }
+        
+        s.dodgeT -= dt
+        if (s.dodgeT <= 0 && s.dodgePhase === 0) {
+          s.dodgePhase = 1; s.dodgeTimer = 250
+        }
+        if (s.dodgePhase === 1) {
+          s.dodgeTimer -= dt
+          if (s.dodgeTimer <= 0) {
+            s.dodgePhase = 2; s.dodgeTimer = 500; s.dodging = true
+          }
+        } else if (s.dodgePhase === 2) {
+          s.dodgeTimer -= dt
+          if (s.dodgeTimer <= 0) {
+            s.dodgePhase = 0; s.dodging = false
+            s.dodgeT = 2500 + Math.random() * 1500
+          }
+        }
+        
+        q.update?.(s, dt)
+      } else if (s.tired) {
+        s.depth = 1.0
+        s.x += (s.W / 2 - s.x) * 0.05
+        s.y += (s.H / 2 - s.y) * 0.05
+      }
+      
+      const hitR = 1.0 - 0.7 * ((s.t % 1600) / 1600)
+      
+      for (let i = s.balls.length - 1; i >= 0; i--) {
+        const b = s.balls[i]
+        b.x += b.vx * (dt / 16.67)
+        b.y += b.vy * (dt / 16.67)
+        b.vy += 0.9 * (dt / 16.67)
+        b.s = Math.max(0.35, b.s - 0.012 * (dt / 16.67))
+        if (b.isCurve) {
+          b.vx += b.curveDir * 0.35 * (dt / 16.67)
+          b.rot = (b.rot || 0) + b.curveDir * 0.2 * (dt / 16.67)
+        }
+        
+        let hitSomeone = false
+        if (b.vy > 0 && b.s < 0.8) {
+          if (s.visible && !s.dodging) {
+            const effSize = s.size * s.depth
+            const pad = effSize * 0.16
+            if (b.x > s.x - effSize/2 + pad && b.x < s.x + effSize/2 - pad &&
+                b.y > s.y - effSize/2 + pad && b.y < s.y + effSize/2 - pad) {
+              hitSomeone = true
+              if (!b.judged) {
+                b.judged = true
+                if (s.shield) missTarget(s)
+                else hitTarget(s, q, time, b, hitR)
+              }
+            }
+          }
+          if (!hitSomeone && s.decoys?.length) {
+            for (let j = 0; j < s.decoys.length; j++) {
+              const dec = s.decoys[j]
+              const effSize = s.size * s.depth
+              const pad = effSize * 0.16
+              if (b.x > dec.x - effSize/2 + pad && b.x < dec.x + effSize/2 - pad &&
+                  b.y > dec.y - effSize/2 + pad && b.y < dec.y + effSize/2 - pad) {
+                hitSomeone = true
+                if (!b.judged) {
+                  b.judged = true
+                  missTarget(s)
+                }
+                s.decoys.splice(j, 1)
+                break
+              }
+            }
+          }
+        }
+        if (hitSomeone || b.y > s.H + 50 || b.s <= 0.35) {
+          if (!hitSomeone && !b.judged && !s.capturing) {
+            b.judged = true
+            missTarget(s)
+          }
+          s.balls.splice(i, 1)
+        }
+      }
+      
+      for (let i = s.particles.length - 1; i >= 0; i--) {
+        const p = s.particles[i]
+        p.x += p.vx * (dt/16.67)
+        p.y += p.vy * (dt/16.67)
+        p.life -= dt
+        if (p.life <= 0) s.particles.splice(i, 1)
+      }
+      
+      draw(ctx, s, q, hitR)
     }
 
     const drawWin = (ctx, s, dt) => {
       ctx.clearRect(0, 0, s.W, s.H)
       s.winTimer += dt
       ctx.save()
+      
+      for (const p of s.particles) {
+        p.x += p.vx * (dt/16.67); p.y += p.vy * (dt/16.67); p.life -= dt
+        if (p.life > 0) {
+          ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 600
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill()
+        }
+      }
+      ctx.globalAlpha = 1
+      
       if (s.winTimer < 1000) {
         const p = s.winTimer / 1000
-        ctx.translate(s.W / 2, s.H / 2)
-        const shake = Math.sin(p * Math.PI * 6) * 10 * (1 - p)
-        ctx.translate(shake, 0)
+        const c = s.capture || { x: s.W/2, y: s.H/2 }
+        ctx.translate(c.x, c.y)
         ctx.scale(1 - p, 1 - p)
         ctx.globalAlpha = 1 - p
-        if (s.image) {
-          ctx.drawImage(s.image, -s.size/2, -s.size/2, s.size, s.size)
-        } else {
-          ctx.fillStyle = character.color || '#ff0000'
-          ctx.beginPath()
-          ctx.arc(0, 0, s.size/2, 0, Math.PI * 2)
-          ctx.fill()
-        }
+        drawBall(ctx, character.color, 0)
       } else {
         if (!s.ended) {
           s.ended = true
@@ -276,8 +401,18 @@ export default function Battle({ character, transparent = false, easy = false, o
       }
       ctx.restore()
     }
+    
+    const drawBall = (ctx, color, rot = 0) => {
+      ctx.save()
+      ctx.rotate(rot)
+      ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill()
+      ctx.beginPath(); ctx.arc(0, 0, 20, Math.PI, Math.PI * 2); ctx.fillStyle = color || '#ff0000'; ctx.fill()
+      ctx.lineWidth = 2; ctx.strokeStyle = '#000'; ctx.stroke()
+      ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke()
+      ctx.restore()
+    }
 
-    const draw = (ctx, s, q) => {
+    const draw = (ctx, s, q, hitR) => {
       if (!transparent) {
         ctx.fillStyle = character.colorLight || '#ffffff'
         ctx.fillRect(0, 0, s.W, s.H)
@@ -285,63 +420,101 @@ export default function Battle({ character, transparent = false, easy = false, o
         ctx.clearRect(0, 0, s.W, s.H)
       }
       ctx.save()
-      if (s.shakeFrames > 0) {
-        s.shakeFrames--
-        const shakeX = (Math.random() - 0.5) * 10
-        const shakeY = (Math.random() - 0.5) * 10
-        ctx.translate(shakeX, shakeY)
-      }
+      
       const drawChar = (cx, cy, isDecoy) => {
         ctx.save()
         ctx.translate(cx, cy)
-        if (!isDecoy && s.hitStopUntil > performance.now()) {
-          ctx.scale(1.2, 0.8)
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'
+        ctx.beginPath()
+        ctx.ellipse(0, s.size * s.depth * 0.4, s.size * s.depth * 0.4, s.size * s.depth * 0.15, 0, 0, Math.PI * 2)
+        ctx.fill()
+        
+        let jumpOffset = 0
+        if (s.dodgePhase === 1) {
+          ctx.scale(1.2, 0.5)
+          ctx.translate(0, s.size * s.depth * 0.25)
+        } else if (s.dodgePhase === 2) {
+          jumpOffset = -s.size * s.depth * 0.5 * Math.sin( (1 - s.dodgeTimer/500) * Math.PI )
+          ctx.translate(0, jumpOffset)
         }
+        
+        const d = isDecoy ? 1.0 : s.depth
+        const effSize = s.size * d
         if (s.image) {
-          ctx.drawImage(s.image, -s.size/2, -s.size/2, s.size, s.size)
+          ctx.drawImage(s.image, -effSize/2, -effSize/2, effSize, effSize)
         } else {
           ctx.fillStyle = character.color || '#ff0000'
-          ctx.beginPath()
-          ctx.arc(0, 0, s.size/2, 0, Math.PI * 2)
-          ctx.fill()
+          ctx.beginPath(); ctx.arc(0, 0, effSize/2, 0, Math.PI * 2); ctx.fill()
+        }
+        
+        if (!isDecoy && !s.tired && s.visible) {
+          ctx.strokeStyle = '#fff'
+          ctx.lineWidth = 2
+          ctx.beginPath(); ctx.arc(0, 0, effSize/2, 0, Math.PI * 2); ctx.stroke()
+          
+          let ringColor = s.catchRate >= 0.45 ? '#0f0' : s.catchRate >= 0.35 ? '#ff0' : '#f00'
+          ctx.strokeStyle = ringColor
+          ctx.lineWidth = 4
+          ctx.beginPath(); ctx.arc(0, 0, (effSize/2) * hitR, 0, Math.PI * 2); ctx.stroke()
         }
         ctx.restore()
       }
+      
       if (s.visible) drawChar(s.x, s.y, false)
       if (s.decoys) {
         for (const dec of s.decoys) drawChar(dec.x, dec.y, true)
       }
       q.draw?.(ctx, s)
+      
       for (const p of s.particles) {
-        ctx.fillStyle = p.color
-        ctx.globalAlpha = p.life / 500
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / 500)
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill()
       }
       ctx.globalAlpha = 1
+      
+      if (s.capturing && s.capture) {
+        const c = s.capture
+        ctx.save()
+        ctx.translate(c.x, c.y)
+        drawBall(ctx, character.color, c.shakeRot || 0)
+        ctx.restore()
+      }
+      
       for (const b of s.balls) {
         ctx.save()
         ctx.translate(b.x, b.y)
         ctx.scale(b.s, b.s)
-        ctx.beginPath()
-        ctx.arc(0, 0, 20, 0, Math.PI * 2)
-        ctx.fillStyle = '#fff'
-        ctx.fill()
-        ctx.beginPath()
-        ctx.arc(0, 0, 20, Math.PI, Math.PI * 2)
-        ctx.fillStyle = character.color || '#ff0000'
-        ctx.fill()
-        ctx.lineWidth = 2
-        ctx.strokeStyle = '#000'
-        ctx.stroke()
-        ctx.beginPath()
-        ctx.arc(0, 0, 4, 0, Math.PI * 2)
-        ctx.fillStyle = '#fff'
-        ctx.fill()
-        ctx.stroke()
+        drawBall(ctx, character.color, b.rot || 0)
         ctx.restore()
       }
+      
+      if (drag.current && drag.current.samples.length > 0) {
+        const b = drag.current.samples[drag.current.samples.length - 1]
+        ctx.save()
+        ctx.translate(b.cx, b.cy)
+        drawBall(ctx, character.color, drag.current.totalAngle || 0)
+        ctx.restore()
+      }
+      
+      for (const j of s.judgements) {
+        ctx.save()
+        ctx.translate(j.x, j.y - (1000 - j.life) * 0.05)
+        ctx.globalAlpha = Math.max(0, j.life / 1000)
+        ctx.fillStyle = '#ff7a45'
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 4
+        ctx.font = 'bold 36px sans-serif'
+        ctx.textAlign = 'center'
+        
+        let text = j.text
+        if (j.curve) text += (text ? ' + ' : '') + '커브볼!'
+        
+        ctx.strokeText(text, 0, 0)
+        ctx.fillText(text, 0, 0)
+        ctx.restore()
+      }
+      
       ctx.restore()
     }
     
@@ -356,15 +529,30 @@ export default function Battle({ character, transparent = false, easy = false, o
   
   const onDown = (e) => {
     e.currentTarget.setPointerCapture?.(e.pointerId)
-    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, samples: [] }
+    drag.current = { 
+      id: e.pointerId, sx: e.clientX, sy: e.clientY, 
+      samples: [], totalAngle: 0, lastAngle: undefined 
+    }
   }
   
   const onMove = (e) => {
     const d = drag.current
     if (!d || d.id !== e.pointerId) return
-    const x = e.clientX - d.sx
-    const y = e.clientY - d.sy
-    d.samples.push({ x, y, t: performance.now(), cx: e.clientX, cy: e.clientY })
+    const cx = e.clientX
+    const cy = e.clientY
+    const x = cx - d.sx
+    const y = cy - d.sy
+    
+    const currentAngle = Math.atan2(y, x)
+    if (d.lastAngle !== undefined && Math.hypot(x, y) > 10) {
+      let diff = currentAngle - d.lastAngle
+      if (diff > Math.PI) diff -= 2 * Math.PI
+      if (diff < -Math.PI) diff += 2 * Math.PI
+      d.totalAngle += diff
+    }
+    if (Math.hypot(x, y) > 10) d.lastAngle = currentAngle
+    
+    d.samples.push({ x, y, t: performance.now(), cx, cy })
     if (d.samples.length > 6) d.samples.shift()
   }
   
@@ -373,7 +561,7 @@ export default function Battle({ character, transparent = false, easy = false, o
     if (!d || d.id !== e.pointerId) return
     drag.current = null
     const s = stateRef.current
-    if (s.winPhase > 0) return
+    if (s.winPhase > 0 || s.capturing) return
     const samples = d.samples
     if (samples.length < 2) return
     const a = samples[0]
@@ -384,8 +572,12 @@ export default function Battle({ character, transparent = false, easy = false, o
     if (vy > -6) return
     vx = Math.max(-26, Math.min(26, vx))
     vy = Math.max(-46, vy)
+    
+    const isCurve = Math.abs(d.totalAngle) >= 2 * Math.PI
+    const curveDir = d.totalAngle > 0 ? 1 : -1
+    
     sfx.throwBall()
-    s.balls.push({ x: b.cx, y: b.cy, vx, vy, s: 1 })
+    s.balls.push({ x: b.cx, y: b.cy, vx, vy, s: 1, isCurve, curveDir, rot: d.totalAngle })
   }
 
   return (
@@ -400,13 +592,8 @@ export default function Battle({ character, transparent = false, easy = false, o
       />
       <div style={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', justifyContent: 'space-between', color: transparent ? '#fff' : '#000', pointerEvents: 'none' }}>
         <div style={{ fontSize: 24, fontWeight: 'bold' }}>🕒 {timeLeft}</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {Array.from({ length: maxHp }).map((_, i) => (
-            <div key={i} style={{
-              width: 24, height: 24, borderRadius: '50%', 
-              background: i < hp ? '#ff4d4f' : 'rgba(0,0,0,0.3)', border: '2px solid #fff'
-            }} />
-          ))}
+        <div style={{ display: 'flex', gap: 4, fontWeight: 'bold', fontSize: 18, textShadow: transparent ? '1px 1px 2px #000' : 'none' }}>
+          포획 시도 {hits} · 탈출 {breakouts}/3
         </div>
       </div>
       {label && !tired && (
@@ -423,11 +610,7 @@ export default function Battle({ character, transparent = false, easy = false, o
           </span>
         </div>
       )}
-      {combo > 1 && (
-        <div style={{ position: 'absolute', top: 100, left: 20, color: '#ff7a45', fontWeight: 'bold', fontSize: 20, pointerEvents: 'none', textShadow: '1px 1px 0 #fff' }}>
-          {combo} COMBO!
-        </div>
-      )}
     </div>
   )
 }
+

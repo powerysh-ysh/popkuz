@@ -2,10 +2,12 @@ export const QUIRKS = {
   chokku: {
     label: "덤불에 숨었다 튀어나와요!",
     init: function(s) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { state: 'visible', timer: 0 };
     },
     update: function(s, dt) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { state: 'visible', timer: 0 };
       s.q.timer += dt;
@@ -23,6 +25,7 @@ export const QUIRKS = {
       }
     },
     draw: function(ctx, s) {
+      if (s.capturing) return;
       if (s.tired) return;
       if (s.q && s.q.state === 'hidden') {
         ctx.fillStyle = '#22A45D';
@@ -39,10 +42,12 @@ export const QUIRKS = {
   ppakku: {
     label: "불꽃 대시로 빠르게 움직여요!",
     init: function(s) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { timer: 0, dashing: false, trails: [] };
     },
     update: function(s, dt) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { timer: 0, dashing: false, trails: [] };
       s.q.timer += dt;
@@ -65,6 +70,7 @@ export const QUIRKS = {
       }
     },
     draw: function(ctx, s) {
+      if (s.capturing) return;
       if (s.tired) return;
       if (s.q && s.q.dashing && s.q.trails.length > 0) {
         ctx.strokeStyle = '#E03131';
@@ -86,10 +92,12 @@ export const QUIRKS = {
   nokku: {
     label: "전기 보호막을 켜고 꺼요!",
     init: function(s) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { timer: 0 };
     },
     update: function(s, dt) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.q = s.q || { timer: 0 };
       s.q.timer += dt;
@@ -99,6 +107,7 @@ export const QUIRKS = {
       s.shield = (s.q.timer < 1500);
     },
     draw: function(ctx, s) {
+      if (s.capturing) return;
       if (s.tired) return;
       if (s.shield) {
         ctx.strokeStyle = '#F2B705';
@@ -110,35 +119,57 @@ export const QUIRKS = {
     }
   },
   heenkku: {
-    label: "단단한 얼음 방패를 들고 있어요!",
+    label: "얼음 방패 때문에 잘 안 잡혀요!",
     init: function(s) {
+      if (s.capturing) return;
       if (s.tired) return;
-      s.maxHp = 5;
-      s.hp = 5;
+      s.catchRate *= 0.7;
       s.speed = 0.6;
+      s.q = s.q || { flashBlue: 0 };
     },
     update: function(s, dt) {
+      if (s.capturing) return;
       if (s.tired) return;
+      if (s.q && s.q.flashBlue > 0) {
+        s.q.flashBlue -= dt;
+      }
     },
     draw: function(ctx, s) {
+      if (s.capturing) return;
       if (s.tired) return;
-      var dmg = s.maxHp - s.hp;
-      if (dmg > 0) {
+      
+      var size = s.size * (s.depth || 1);
+      
+      if (s.q && s.q.flashBlue > 0) {
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      var breakouts = s.breakouts || 0;
+      if (breakouts > 0) {
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        for (var i = 0; i < dmg; i++) {
-          var angle = (i * Math.PI * 2) / s.maxHp;
+        for (var i = 0; i < breakouts; i++) {
+          var angle = (i * Math.PI * 2) / Math.max(breakouts, 5);
           ctx.moveTo(s.x, s.y);
-          ctx.lineTo(s.x + Math.cos(angle) * s.size * 0.6, s.y + Math.sin(angle) * s.size * 0.6);
+          ctx.lineTo(s.x + Math.cos(angle) * size * 0.6, s.y + Math.sin(angle) * size * 0.6);
         }
         ctx.stroke();
       }
+    },
+    onBreakout: function(s) {
+      if (s.tired) return;
+      s.q = s.q || {};
+      s.q.flashBlue = 800;
     }
   },
   kkumkku: {
     label: "가짜 분신들과 섞여요!",
     init: function(s) {
+      if (s.capturing) return;
       if (s.tired) return;
       s.decoys = [];
       for (var i = 0; i < 3; i++) {
@@ -152,6 +183,7 @@ export const QUIRKS = {
       }
     },
     update: function(s, dt) {
+      if (s.capturing) return;
       if (s.tired) return;
       if (s.decoys) {
         var sm = dt * 60 / 1000;
@@ -172,9 +204,10 @@ export const QUIRKS = {
       }
     },
     draw: function(ctx, s) {
+      if (s.capturing) return;
       if (s.tired) return;
     },
-    onHit: function(s) {
+    onBreakout: function(s) {
       if (s.tired) return;
       if (s.decoys && s.decoys.length > 0) {
         var i = Math.floor(Math.random() * s.decoys.length);

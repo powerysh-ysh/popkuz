@@ -1053,6 +1053,34 @@ button {
   touch-action: none; /* 드래그할 때 화면이 같이 움직이지 않게 */
 }
 
+.ball-selectors {
+  position: absolute;
+  top: -40px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.ball-sel {
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.4);
+  color: #333;
+  backdrop-filter: blur(4px);
+  box-shadow: none;
+}
+
+.ball-sel.active {
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid var(--green);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+}
+
 .ball-hint {
   margin: 0 0 14px;
   font-size: 15px;
@@ -1075,6 +1103,21 @@ button {
 
 .ball:active {
   cursor: grabbing;
+}
+
+.ball-judge {
+  background: radial-gradient(circle at 34% 28%, #fff 0 6%, #FFE066 22% 100%);
+  border: 4px solid #FFA94D;
+}
+.ball-judge .ball-band {
+  background: #FFA94D;
+}
+.ball-judge .ball-dot {
+  box-shadow: inset 0 0 0 3px #FFA94D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
 }
 
 .ball-band {

@@ -14,6 +14,8 @@
  *   · 어떤 미션도 QR을 다시 찍게 만들지 않습니다 (동선을 꼬지 않으려고)
  */
 
+import { issueKeycap } from './keycap'
+
 const KEY = 'popkkus.quest.v1'
 
 /**
@@ -105,9 +107,12 @@ export function progress(ev) {
   // 깼습니다 — 다음 미션을 바로 걸어둡니다.
   const next = pick(q.id)
   write({ id: next.id, n: 0 })
+  
+  const newKeycap = issueKeycap()
+
   return {
     quest: { ...next, n: 0, done: false },
-    completed: { ...q, n: q.goal, done: true },
+    completed: { ...q, n: q.goal, done: true, keycap: !!newKeycap },
   }
 }
 

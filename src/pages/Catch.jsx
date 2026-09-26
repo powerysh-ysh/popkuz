@@ -9,6 +9,7 @@ import Progress from '../components/Progress'
 
 import Battle from '../components/Battle'
 import { saveScore } from '../lib/score'
+import { startCamera, stopCamera } from '../lib/scanner'
 
 /**
  * QR 착지 화면. 주소 형태: /c/chokku?k=sb01
@@ -29,6 +30,11 @@ export default function Catch() {
   const capturedId = useRef(null)
 
   const [coupon, setCoupon] = useState(null)
+
+  const [camStream, setCamStream] = useState(null)
+  const [camReady, setCamReady] = useState(false)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
   
   // 두 형식을 모두 받습니다.
   //   긴 형식  /c/chokku?k=sb01  — 먼저 만든 인쇄물
@@ -46,6 +52,9 @@ export default function Catch() {
     setResult(null)
     setCoupon(null)
     capturedId.current = null
+    stopCamera(streamRef.current)
+    setCamStream(null)
+    setCamReady(false)
   }
 
   const store = isStore()
@@ -74,7 +83,49 @@ export default function Catch() {
     }
   }, [character, tokenOk, locked, store, capture, has, showBattle, battleResult])
 
+  useEffect(() => {
+    if (showBattle && !camReady) {
+      let active = true
+      const timer = setTimeout(() => {
+        if (active) setCamReady(true)
+      }, 3000)
+
+      startCamera().then(({ stream, error }) => {
+        if (!active) {
+          if (stream) stopCamera(stream)
+          return
+        }
+        clearTimeout(timer)
+        if (stream) {
+          setCamStream(stream)
+          streamRef.current = stream
+        }
+        setCamReady(true)
+      })
+
+      return () => {
+        active = false
+        clearTimeout(timer)
+      }
+    }
+  }, [showBattle, camReady])
+
+  useEffect(() => {
+    if (camStream && videoRef.current) {
+      videoRef.current.srcObject = camStream
+    }
+  }, [camStream, camReady])
+
+  useEffect(() => {
+    return () => {
+      stopCamera(streamRef.current)
+    }
+  }, [])
+
   const handleWin = (res) => {
+    stopCamera(streamRef.current)
+    setCamStream(null)
+    setCamReady(false)
     saveScore(character.id, res)
     setBattleResult(res)
     setShowBattle(false)
@@ -128,12 +179,35 @@ export default function Catch() {
   }
 
   if (showBattle) {
+    if (!camReady) {
+      return (
+        <div className="catch" style={{ background: character.colorLight }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <h2 style={{ color: character.colorDark }}>팝꾸즈가 나타나는 중…</h2>
+          </div>
+        </div>
+      )
+    }
     return (
-      <Battle 
-        character={character} 
-        easy={store} 
-        onWin={handleWin} 
-      />
+      <div style={{ position: 'fixed', inset: 0 }}>
+        {camStream && (
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+          />
+        )}
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Battle
+            character={character}
+            easy={store}
+            onWin={handleWin}
+            transparent={!!camStream}
+          />
+        </div>
+      </div>
     )
   }
 

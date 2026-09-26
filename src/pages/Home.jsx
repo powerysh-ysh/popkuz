@@ -5,6 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { applySharedSpots } from '../lib/spots'
 import { COUPON_TERMS, formatWon, modeConfig, planOf } from '../lib/mode'
 import { unusedTotal } from '../lib/coupon'
+import { getKeycap } from '../lib/keycap'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -99,6 +100,17 @@ export default function Home() {
               </Link>
             )
           )}
+          {(() => {
+            const keycap = getKeycap()
+            if (keycap && !keycap.usedAt) {
+              return (
+                <Link className="btn btn-mission" to="/ticket">
+                  🎁 키캡 체험권 보기
+                </Link>
+              )
+            }
+            return null
+          })()}
           <Link className="btn btn-ghost" to="/dex">
             도감 열기
           </Link>

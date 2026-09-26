@@ -1,12 +1,13 @@
 export function calculateResult({ baseScore, hits, misses, timeLeft, tired }) {
-  let finalScore = baseScore + Math.floor(timeLeft) * 10 - misses * 20
-  if (finalScore < 0) finalScore = 0
+  let finalScore = baseScore + Math.floor(timeLeft) * 10 - misses * 20;
+  if (hits === 1 && misses === 0) finalScore += 300;
+  if (finalScore < 0) finalScore = 0;
   
-  let grade = 'C'
+  let grade = 'C';
   if (!tired) {
-    if (finalScore >= 500) grade = 'S'
-    else if (finalScore >= 350) grade = 'A'
-    else if (finalScore >= 200) grade = 'B'
+    if (finalScore >= 700) grade = 'S';
+    else if (finalScore >= 450) grade = 'A';
+    else if (finalScore >= 250) grade = 'B';
   }
   
   return {
@@ -15,5 +16,5 @@ export function calculateResult({ baseScore, hits, misses, timeLeft, tired }) {
     hits,
     misses,
     timeLeft
-  }
+  };
 }
