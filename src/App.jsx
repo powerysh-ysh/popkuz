@@ -13,13 +13,17 @@ import Done from './pages/Done'
 import Staff from './pages/Staff'
 import Rank from './pages/Rank'
 import Ticket from './pages/Ticket'
+import Stamp from './pages/Stamp'
 import SoundToggle from './components/SoundToggle'
 import { unlock, playBgm, isUnlocked } from './lib/sfx'
+import { refreshEnabledSpaces } from './lib/stamps'
 
 function AppContent() {
   const location = useLocation()
 
   useEffect(() => {
+    refreshEnabledSpaces()
+    
     const events = ['pointerup', 'touchend', 'click', 'keydown']
     const handleUnlock = () => {
       unlock().then(() => {
@@ -66,6 +70,8 @@ function AppContent() {
         <Route path="/m/:id" element={<ModeEntry />} />
         <Route path="/rank" element={<Rank />} />
         <Route path="/ticket" element={<Ticket />} />
+        {/* 스탬프 QR */}
+        <Route path="/s/:id" element={<Stamp />} />
         {/* 짧은 QR 주소 (#/q7) — 다른 경로와 겹치지 않도록 두 글자만 */}
         <Route path="/:id" element={<Catch />} />
         <Route path="*" element={<Navigate to="/" replace />} />

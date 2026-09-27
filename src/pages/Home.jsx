@@ -5,7 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { applySharedSpots } from '../lib/spots'
 import { COUPON_TERMS, formatWon, modeConfig, planOf } from '../lib/mode'
 import { unusedTotal } from '../lib/coupon'
-import { getKeycap } from '../lib/keycap'
+import { keycapStatus } from '../lib/keycap'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
@@ -101,11 +101,11 @@ export default function Home() {
             )
           )}
           {(() => {
-            const keycap = getKeycap()
-            if (keycap && !keycap.usedAt) {
+            const status = keycapStatus(count)
+            if (status.remaining > 0) {
               return (
                 <Link className="btn btn-mission" to="/ticket">
-                  🎁 키캡 체험권 보기
+                  🎁 키캡 교환권 ({status.remaining}개)
                 </Link>
               )
             }

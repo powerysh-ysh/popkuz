@@ -257,13 +257,7 @@ export default function Scan() {
     buzz([30, 40, 30, 40, 60])
     setReward(r.completed)
     sfx.mission()
-    if (r.completed.keycap) sfx.ticket()
-    
-    if (r.completed.keycap) {
-      setTimeout(() => setReward(null), 5000)
-    } else {
-      setTimeout(() => setReward(null), 2800)
-    }
+    setTimeout(() => setReward(null), 2800)
   }
 
   /** 화면의 캐릭터를 탭해서 잡습니다. */
@@ -477,12 +471,6 @@ export default function Scan() {
           <strong>미션 완료!</strong>
           <span>{reward.text}</span>
           <em>반짝조각 +{reward.rare}</em>
-          {reward.keycap && (
-            <>
-              <span>🎁 3D 프린터 키캡 체험권 획득!</span>
-              <Link to="/ticket" style={{ color: '#FFE066', textDecoration: 'underline', marginTop: '4px', fontSize: '14px' }}>체험권 보기</Link>
-            </>
-          )}
         </div>
       )}
 

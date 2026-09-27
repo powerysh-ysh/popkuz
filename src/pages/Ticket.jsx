@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getKeycap, useKeycap } from '../lib/keycap'
+import { keycapStatus, redeemKeycaps } from '../lib/keycap'
+import { useHunt } from '../lib/HuntContext'
 
 export default function Ticket() {
   const navigate = useNavigate()
-  const [keycap, setKeycap] = useState(getKeycap())
+  const { count } = useHunt()
+  const [status, setStatus] = useState(() => keycapStatus(count))
 
   const handleUse = () => {
-    if (window.confirm('스태프만 눌러주세요. 사용 처리하면 되돌릴 수 없어요.')) {
-      const res = useKeycap()
+    if (window.confirm(`스태프만 눌러주세요. 키캡 ${status.remaining}개 지급 처리하면 되돌릴 수 없어요.`)) {
+      const res = redeemKeycaps(count)
       if (res.ok) {
-        setKeycap(getKeycap())
+        setStatus(keycapStatus(count))
       } else {
-        alert(res.reason)
+        alert("처리에 실패했습니다.")
       }
     }
   }
@@ -21,40 +23,43 @@ export default function Ticket() {
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          <span>시작박스</span> 3D 프린터 키캡 체험권
+          <span>시작박스</span> 3D 프린터 키캡 교환권
         </Link>
       </header>
 
-      {keycap ? (
+      {status.total > 0 ? (
         <div className="card center stack">
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 체험권</h2>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 교환권</h2>
           <div
-            className={`ticket${keycap.usedAt ? ' used' : ''}`}
-            style={{ borderColor: keycap.usedAt ? 'var(--line)' : '#007aff', textAlign: 'center', display: 'block', padding: '24px 16px' }}
+            className={`ticket${status.remaining === 0 ? ' used' : ''}`}
+            style={{ borderColor: status.remaining === 0 ? 'var(--line)' : '#007aff', textAlign: 'center', display: 'block', padding: '24px 16px' }}
           >
-            <p className="ticket-code" style={{ fontSize: 36, margin: '0 0 16px' }}>{keycap.code}</p>
+            <p className="ticket-code" style={{ fontSize: 36, margin: '0 0 16px' }}>{status.code}</p>
             <p className="ticket-meta" style={{ marginBottom: 4 }}>
-              발급 시각: {new Date(keycap.at).toLocaleString()}
-            </p>
-            <p className="ticket-meta">
-              상태: {keycap.usedAt ? `사용 완료 (${new Date(keycap.usedAt).toLocaleString()})` : '사용 가능'}
+              받을 수 있는 키캡 {status.total}개 · 받아간 {status.used}개
             </p>
           </div>
           
-          {!keycap.usedAt && (
+          {status.remaining > 0 && (
             <button className="btn btn-primary" onClick={handleUse}>
-              스태프 확인 — 사용 처리
+              스태프 확인 — 키캡 {status.remaining}개 지급
             </button>
           )}
           
-          <p className="footnote">스태프는 코드를 적어 두세요</p>
+          {status.total !== 2 && (
+            <p style={{ margin: '8px 0', fontSize: 14, color: 'var(--brand)' }}>
+              도감을 다 채우면 키캡 2개!
+            </p>
+          )}
+          
+          <p className="footnote">스태프는 코드와 개수를 적어 두세요</p>
         </div>
       ) : (
         <div className="card center stack">
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 체험권</h2>
-          <p>탐지기의 미션을 하나 깨면 받을 수 있어요</p>
-          <Link className="btn btn-primary" to="/scan">
-            🔍 탐지기로 가기
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 교환권</h2>
+          <p>팝꾸즈 3마리를 잡고 체험 공간에서 스탬프를 받으면 키캡 1개, 도감을 다 채우면 2개</p>
+          <Link className="btn btn-primary" to="/dex">
+            도감 열기
           </Link>
         </div>
       )}

@@ -197,3 +197,67 @@ language sql stable as $$
   limit n;
 $$;
 grant execute on function hunt_top(int) to public;
+
+-- ── 체험 공간 설정 ──────────────────────────────────────────────
+create table if not exists hunt_config (
+  id int primary key check (id = 1),
+  spaces int[] not null default '{1,2,3}',
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists hunt_secret (
+  id int primary key check (id = 1),
+  pin_hash text not null
+);
+
+alter table hunt_config enable row level security;
+alter table hunt_secret enable row level security;
+-- 정책 없음 (직접 읽기·쓰기 불가)
+
+insert into hunt_config (id) values (1) on conflict (id) do nothing;
+
+create or replace function hunt_get_spaces()
+returns int[]
+security definer
+set search_path = public
+language sql stable as $$
+  select spaces from hunt_config where id = 1;
+$$;
+grant execute on function hunt_get_spaces() to public;
+
+create extension if not exists pgcrypto with schema extensions;
+
+create or replace function hunt_set_spaces(pin text, spaces int[])
+returns boolean
+security definer
+set search_path = public, extensions
+language plpgsql as $$
+declare
+  is_valid boolean;
+  clean_spaces int[];
+begin
+  select crypt(pin, pin_hash) = pin_hash into is_valid
+  from hunt_secret where id = 1;
+
+  if not coalesce(is_valid, false) then
+    return false;
+  end if;
+
+  select array(
+    select distinct s
+    from unnest(spaces) as s
+    where s between 1 and 4
+    order by s
+  ) into clean_spaces;
+
+  update hunt_config
+  set spaces = clean_spaces,
+      updated_at = now()
+  where id = 1;
+
+  return true;
+end;
+$$;
+grant execute on function hunt_set_spaces(text, int[]) to public;
+
+-- insert into hunt_secret (id, pin_hash) values (1, extensions.crypt('여기에PIN', extensions.gen_salt('bf'))) on conflict (id) do update set pin_hash = excluded.pin_hash;

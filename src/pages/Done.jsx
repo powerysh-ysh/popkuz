@@ -5,9 +5,11 @@ import { useHunt } from '../lib/HuntContext'
 import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
 import * as sfx from '../lib/sfx'
+import { keycapStatus } from '../lib/keycap'
+import { getEnabledSpaces, getStamps } from '../lib/stamps'
 
 export default function Done() {
-  const { complete, finish, code, state } = useHunt()
+  const { complete, finish, state, count } = useHunt()
   const synced = useRef(false)
   const played = useRef(false)
   const score = totalScore()
@@ -27,6 +29,12 @@ export default function Done() {
   }, [complete, finish, state, score])
 
   if (!complete) return <Navigate to="/dex" replace />
+
+  const status = keycapStatus(count)
+  const spaces = getEnabledSpaces()
+  const stamps = getStamps()
+  const enabledStamps = stamps.filter(id => spaces.includes(id))
+  const xCount = spaces.length - enabledStamps.length
 
   return (
     <div className="shell">
@@ -59,24 +67,27 @@ export default function Done() {
       </div>
 
       <div className="card">
-        <p className="center" style={{ margin: 0, fontSize: 16 }}>
-          이 화면을 <strong>스태프에게 보여주세요</strong>
-        </p>
-        <div className="code">{code}</div>
-        <p className="center" style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>
-          완주 인증 코드
-        </p>
+        {status.total === 2 ? (
+          <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
+            도감 완성! 키캡 2개
+          </p>
+        ) : (
+          <p className="center" style={{ margin: 0, fontSize: 16 }}>
+            체험 공간 스탬프 {xCount}개 더 모으면 키캡 2개!
+          </p>
+        )}
       </div>
 
       <div className="stack">
+        <Link className="btn btn-primary" to="/ticket">
+          키캡 교환권 보기
+        </Link>
         <Link className="btn btn-ghost" to="/dex">
           도감 · 진화 보러 가기
         </Link>
       </div>
 
       <p className="footnote">
-        경품은 부스 스태프에게 받아가세요.
-        <br />
         함께해 주셔서 고맙습니다! 🌱
       </p>
     </div>

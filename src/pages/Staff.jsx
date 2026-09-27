@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTERS } from '../data/characters'
+import { SPACES } from '../data/spaces'
 import { useHunt } from '../lib/HuntContext'
 import { checkConnection, diagnoseWrite, syncEnabled } from '../lib/sync'
 import { formatTime, getBest, getMission } from '../lib/mission'
 import { getWild } from '../lib/wild'
 import { MODES, formatWon, getMode, planOf, setMode } from '../lib/mode'
 import { getCoupons, useCoupon } from '../lib/coupon'
+import { refreshEnabledSpaces, setEnabledSpaces } from '../lib/stamps'
 
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
@@ -20,6 +22,9 @@ export default function Staff() {
   const [mode, setModeState] = useState(() => getMode())
   const [codeInput, setCodeInput] = useState('')
   const [useResult, setUseResult] = useState(null)
+  const [spacesEnabled, setSpacesEnabled] = useState([])
+  const [pin, setPin] = useState('')
+  const [spaceSaveMsg, setSpaceSaveMsg] = useState(null)
   const store = mode === 'store'
 
   function switchMode(id) {
@@ -34,9 +39,23 @@ export default function Staff() {
     if (r.ok) setCodeInput('')
   }
 
+  async function handleSaveSpaces() {
+    setSpaceSaveMsg({ type: 'loading', text: '저장 중…' })
+    const res = await setEnabledSpaces(pin, spacesEnabled)
+    if (res.ok) {
+      setSpaceSaveMsg({ type: 'success', text: '저장됐어요 — 모든 관람객 폰에 적용' })
+      setPin('')
+    } else {
+      setSpaceSaveMsg({ type: 'error', text: res.reason })
+    }
+  }
+
   useEffect(() => {
     let alive = true
     checkConnection().then((r) => alive && setConn(r))
+    refreshEnabledSpaces().then((ids) => {
+      if (alive) setSpacesEnabled(ids)
+    })
     return () => {
       alive = false
     }
@@ -50,6 +69,65 @@ export default function Staff() {
         </header>
 
         <div className="card">
+          <h2 style={{ marginTop: 0, fontSize: 17 }}>체험 공간 설정</h2>
+          <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+            {SPACES.map(s => (
+              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={spacesEnabled.includes(s.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setSpacesEnabled([...spacesEnabled, s.id])
+                    else setSpacesEnabled(spacesEnabled.filter(id => id !== s.id))
+                  }}
+                />
+                {s.name} (팝꾸즈 {s.unlockAt}마리부터)
+              </label>
+            ))}
+          </div>
+          <input
+            className="setup-input"
+            type="password"
+            inputMode="numeric"
+            placeholder="PIN 번호"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            style={{ marginTop: 0 }}
+          />
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={handleSaveSpaces}>
+            저장
+          </button>
+          {spaceSaveMsg && (
+            <p style={{ marginTop: 10, fontSize: 14, color: spaceSaveMsg.type === 'error' ? '#FFA8A8' : (spaceSaveMsg.type === 'success' ? '#8CE99A' : '#C7CCD2') }}>
+              {spaceSaveMsg.type === 'error' ? `⚠️ ${spaceSaveMsg.text}` : (spaceSaveMsg.type === 'success' ? `✅ ${spaceSaveMsg.text}` : spaceSaveMsg.text)}
+            </p>
+          )}
+        </div>
+
+        <div className="card" style={{ marginTop: 14 }}>
+          <h2 style={{ marginTop: 0, fontSize: 17 }}>공간 스탬프 QR</h2>
+          <p style={{ fontSize: 14, color: '#FFA8A8', marginBottom: 12 }}>
+            담당자는 체험·설문을 마친 분에게만 이 QR을 보여 주세요
+          </p>
+          {SPACES.map((s, idx) => {
+            const isOn = spacesEnabled.includes(s.id)
+            return (
+              <div key={s.id} style={{ marginBottom: idx === SPACES.length - 1 ? 0 : 20, paddingBottom: idx === SPACES.length - 1 ? 0 : 20, borderBottom: idx === SPACES.length - 1 ? 'none' : '1px solid #2C3238' }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>
+                  {s.name} <span style={{ fontSize: 13, color: isOn ? '#8CE99A' : '#8E949C' }}>{isOn ? '(운영 중)' : '(꺼짐)'}</span>
+                </h3>
+                <p style={{ fontSize: 13, color: '#C7CCD2', margin: '0 0 12px' }}>팝꾸즈 {s.unlockAt}마리부터</p>
+                <img
+                  src={`${import.meta.env.BASE_URL}qr/space-${s.id}.png`}
+                  alt={`${s.name} QR`}
+                  style={{ width: '100%', minWidth: 240, maxWidth: 300, display: 'block', margin: '0 auto', opacity: isOn ? 1 : 0.2 }}
+                />
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="card" style={{ marginTop: 14 }}>
           <h2 style={{ marginTop: 0, fontSize: 17 }}>운영 모드</h2>
           <p style={{ fontSize: 14, color: '#C7CCD2', margin: '0 0 12px' }}>
             지금 이 기기는 <strong style={{ color: '#8CE99A' }}>{MODES[mode].name}</strong> 모드입니다
@@ -141,10 +219,7 @@ export default function Staff() {
         <div className="card" style={{ marginTop: 14 }}>
           <h2 style={{ marginTop: 0, fontSize: 17 }}>완주 확인 방법</h2>
           <p style={{ fontSize: 14, lineHeight: 1.7, color: '#C7CCD2', margin: 0 }}>
-            관람객 화면에 <strong style={{ color: '#fff' }}>진화형 5종</strong>이 보이고
-            6자리 <strong style={{ color: '#fff' }}>완주 인증 코드</strong>가 떠 있으면
-            완주입니다. 코드는 사람마다 다르며 같은 사람은 항상 같은 코드가 나옵니다 —
-            같은 코드로 두 번 받아가려는 경우만 걸러주세요.
+            관람객 폰 홈의 🎁 <strong style={{ color: '#fff' }}>키캡 교환권</strong>에서 코드와 개수를 확인하고, 스태프 확인 버튼으로 지급 처리. 스탬프 1개 이상이면 1개, 도감을 다 채우면 2개.
           </p>
         </div>
 
