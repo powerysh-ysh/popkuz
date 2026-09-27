@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { isMuted, setMuted } from '../lib/sfx'
+import { isMuted, setMuted, unlock } from '../lib/sfx'
 
 export default function SoundToggle() {
   const [muted, setMutedState] = useState(isMuted())
@@ -32,6 +32,7 @@ export default function SoundToggle() {
   }, [])
 
   const toggle = () => {
+    unlock()
     const next = !muted
     setMuted(next)
     setMutedState(next)

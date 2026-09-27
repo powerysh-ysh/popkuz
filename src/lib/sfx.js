@@ -111,10 +111,44 @@ export function setMuted(b) {
   }
 }
 
+export function isUnlocked() {
+  const c = getContext()
+  return c ? c.state === 'running' : false
+}
+
 export function unlock() {
   const c = getContext()
-  if (c && c.state === 'suspended') {
-    c.resume()
+  if (!c) return Promise.resolve()
+
+  try {
+    const p = c.state === 'suspended' ? c.resume() : Promise.resolve()
+    
+    const b = c.createBuffer(1, 1, 22050)
+    const s = c.createBufferSource()
+    s.buffer = b
+    s.connect(c.destination)
+    s.start(0)
+
+    return p.then(() => {
+      if (!isMutedState && currentBgmName !== 'none') {
+        if (!bgmSchedulerId) {
+          bgmNextNoteTime = c.currentTime
+          bgmCurrentNoteIndex = 0
+          bgmBassNextNoteTime = c.currentTime
+          bgmBassCurrentNoteIndex = 0
+          bgmSchedulerId = setInterval(scheduleBgm, 25)
+        } else {
+          if (bgmNextNoteTime < c.currentTime || bgmNextNoteTime > c.currentTime + 5) {
+            bgmNextNoteTime = c.currentTime
+          }
+          if (bgmBassNextNoteTime < c.currentTime || bgmBassNextNoteTime > c.currentTime + 5) {
+            bgmBassNextNoteTime = c.currentTime
+          }
+        }
+      }
+    }).catch(() => {})
+  } catch (e) {
+    return Promise.resolve()
   }
 }
 

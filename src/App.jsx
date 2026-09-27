@@ -14,18 +14,24 @@ import Staff from './pages/Staff'
 import Rank from './pages/Rank'
 import Ticket from './pages/Ticket'
 import SoundToggle from './components/SoundToggle'
-import { unlock, playBgm } from './lib/sfx'
+import { unlock, playBgm, isUnlocked } from './lib/sfx'
 
 function AppContent() {
   const location = useLocation()
 
   useEffect(() => {
-    const handlePointerDown = () => {
-      unlock()
-      window.removeEventListener('pointerdown', handlePointerDown)
+    const events = ['pointerup', 'touchend', 'click', 'keydown']
+    const handleUnlock = () => {
+      unlock().then(() => {
+        if (isUnlocked()) {
+          events.forEach(e => window.removeEventListener(e, handleUnlock, { capture: true }))
+        }
+      })
     }
-    window.addEventListener('pointerdown', handlePointerDown)
-    return () => window.removeEventListener('pointerdown', handlePointerDown)
+    events.forEach(e => window.addEventListener(e, handleUnlock, { capture: true, passive: true }))
+    return () => {
+      events.forEach(e => window.removeEventListener(e, handleUnlock, { capture: true }))
+    }
   }, [])
 
   useEffect(() => {
