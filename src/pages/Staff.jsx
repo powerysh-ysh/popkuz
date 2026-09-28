@@ -10,6 +10,8 @@ import { MODES, formatWon, getMode, planOf, setMode } from '../lib/mode'
 import { getCoupons, useCoupon } from '../lib/coupon'
 import { refreshEnabledSpaces, setEnabledSpaces } from '../lib/stamps'
 
+const SHOW_SPACES = false // 체험 공간 스탬프 미사용에 따라 임시 숨김
+
 /**
  * 부스 운영용 화면. 관람객에게 노출되지 않습니다 (홈에 링크 없음).
  * 스태프 폰에 즐겨찾기 해두고 쓰세요.
@@ -53,9 +55,11 @@ export default function Staff() {
   useEffect(() => {
     let alive = true
     checkConnection().then((r) => alive && setConn(r))
-    refreshEnabledSpaces().then((ids) => {
-      if (alive) setSpacesEnabled(ids)
-    })
+    if (SHOW_SPACES) {
+      refreshEnabledSpaces().then((ids) => {
+        if (alive) setSpacesEnabled(ids)
+      })
+    }
     return () => {
       alive = false
     }
@@ -68,8 +72,9 @@ export default function Staff() {
           <h1 style={{ margin: 0 }}>🛠 스태프 화면</h1>
         </header>
 
-        <div className="card">
-          <h2 style={{ marginTop: 0, fontSize: 17 }}>체험 공간 설정</h2>
+        {SHOW_SPACES && (
+          <div className="card">
+            <h2 style={{ marginTop: 0, fontSize: 17 }}>체험 공간 설정</h2>
           <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
             {SPACES.map(s => (
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -103,7 +108,9 @@ export default function Staff() {
             </p>
           )}
         </div>
+        )}
 
+        {SHOW_SPACES && (
         <div className="card" style={{ marginTop: 14 }}>
           <h2 style={{ marginTop: 0, fontSize: 17 }}>공간 스탬프 QR</h2>
           <p style={{ fontSize: 14, color: '#FFA8A8', marginBottom: 12 }}>
@@ -126,6 +133,7 @@ export default function Staff() {
             )
           })}
         </div>
+        )}
 
         <div className="card" style={{ marginTop: 14 }}>
           <h2 style={{ marginTop: 0, fontSize: 17 }}>운영 모드</h2>
