@@ -427,8 +427,8 @@ export default function Scan() {
     <div className="scan">
       <video ref={videoRef} className="scan-video" playsInline muted autoPlay />
       <div className="scan-dim" />
-      {error && cfg.goal === 'collect' && (
-        <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 16, zIndex: 10, opacity: 0.8 }}>
+      {error && cfg.goal === 'collect' && !found && (
+        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 130px)', left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 16, zIndex: 10, opacity: 0.8 }}>
           카메라 없이도 팝꾸즈가 나타나요
         </div>
       )}

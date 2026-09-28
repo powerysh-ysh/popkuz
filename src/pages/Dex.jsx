@@ -5,6 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { arSupported, launchAR } from '../lib/ar'
 import { EVOLVE_COST, evolve, evolveStatus, rareCount, ro } from '../lib/pieces'
 import { buzz } from '../lib/scanner'
+import { isStore } from '../lib/mode'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 import * as sfx from '../lib/sfx'
@@ -125,13 +126,15 @@ export default function Dex() {
       <div className="card" style={{ marginTop: 16 }}>
         <h2 style={{ marginTop: 0, fontSize: 16 }}>조각은 어떻게 모으나요?</h2>
         <ul className="rules">
+          {isStore() && (
+            <li>
+              <b>·</b>
+              <span>부스의 QR로 처음 만나면 그 팝꾸즈 조각 <strong>3개</strong></span>
+            </li>
+          )}
           <li>
             <b>·</b>
-            <span>처음 잡으면 그 팝꾸즈 조각 <strong>3개</strong></span>
-          </li>
-          <li>
-            <b>·</b>
-            <span>야생 팝꾸즈를 잡으면 그 팝꾸즈 조각 <strong>2개</strong></span>
+            <span>팝꾸즈를 잡으면 그 팝꾸즈 조각 <strong>2개</strong> (반짝·특대 개체는 더 많이)</span>
           </li>
           <li>
             <b>·</b>
