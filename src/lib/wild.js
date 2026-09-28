@@ -25,7 +25,15 @@ export function nextGap() {
   return MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)
 }
 
-export function pickWild(characters) {
+export function pickWild(characters, caughtIds) {
+  if (caughtIds) {
+    const uncaught = characters.filter((c) => !caughtIds.includes(c.id))
+    if (uncaught.length > 0) {
+      if (Math.random() < 0.7) {
+        return uncaught[Math.floor(Math.random() * uncaught.length)]
+      }
+    }
+  }
   return characters[Math.floor(Math.random() * characters.length)]
 }
 

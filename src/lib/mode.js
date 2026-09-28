@@ -27,7 +27,7 @@ export const MODES = {
     reward: '완주 선물',
     hasCoupon: false,
     hasWild: true, // 야생 출현
-    hasMission: true, // 스피드 미션
+    hasMission: false, // 엑스포에서는 스피드 미션(QR 스캔)을 끈다
     hasBuddy: false, // 동행 캐릭터 선택
     sequential: false, // 순서대로 잠금 해제
   },

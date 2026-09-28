@@ -6,7 +6,6 @@ import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
 import * as sfx from '../lib/sfx'
 import { keycapStatus } from '../lib/keycap'
-import { getEnabledSpaces, getStamps } from '../lib/stamps'
 
 export default function Done() {
   const { complete, finish, state, count } = useHunt()
@@ -31,11 +30,6 @@ export default function Done() {
   if (!complete) return <Navigate to="/dex" replace />
 
   const status = keycapStatus(count)
-  const spaces = getEnabledSpaces()
-  const stamps = getStamps()
-  const enabledStamps = stamps.filter(id => spaces.includes(id))
-  const xCount = spaces.length - enabledStamps.length
-
   return (
     <div className="shell">
       <header className="topbar">
@@ -67,15 +61,9 @@ export default function Done() {
       </div>
 
       <div className="card">
-        {status.total === 2 ? (
-          <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
-            도감 완성! 키캡 2개
-          </p>
-        ) : (
-          <p className="center" style={{ margin: 0, fontSize: 16 }}>
-            체험 공간 스탬프 {xCount}개 더 모으면 키캡 2개!
-          </p>
-        )}
+        <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
+          도감 완성! 3D 프린터 키캡 1개
+        </p>
       </div>
 
       <div className="stack">

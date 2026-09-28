@@ -115,24 +115,14 @@ export function spaceLocked(id, caughtCount) {
 }
 
 export function dexTotal() {
-  return 5 + getEnabledSpaces().length
+  return 5
 }
 
 export function dexCount(caughtCount) {
-  const enabled = getEnabledSpaces()
-  const stamps = getStamps()
-  const validStamps = stamps.filter(id => enabled.includes(id))
-  return caughtCount + validStamps.length
+  return caughtCount
 }
 
 export function keycapCount(caughtCount) {
-  const enabled = getEnabledSpaces()
-  const stamps = getStamps()
-  const validStamps = stamps.filter(id => enabled.includes(id))
-  
-  const isDexFull = caughtCount >= 5 && validStamps.length >= enabled.length
-  
-  if (isDexFull) return 2
-  if (validStamps.length >= 1) return 1
+  if (caughtCount >= 5) return 1
   return 0
 }

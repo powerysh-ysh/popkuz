@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
-import { findSpace } from '../data/spaces'
-import { getEnabledSpaces, refreshEnabledSpaces, hasStamp, spaceLocked, dexCount, dexTotal } from '../lib/stamps'
 import { useHunt } from '../lib/HuntContext'
 import { arSupported, launchAR } from '../lib/ar'
-import { spotOf } from '../lib/spots'
 import { EVOLVE_COST, evolve, evolveStatus, rareCount, ro } from '../lib/pieces'
 import { buzz } from '../lib/scanner'
 import Popkku from '../components/Popkku'
@@ -22,10 +19,6 @@ export default function Dex() {
   // 조각은 localStorage에 있으므로, 진화 후 다시 읽도록 한 칸 돌립니다.
   const [tick, setTick] = useState(0)
   const rare = rareCount()
-
-  useEffect(() => {
-    refreshEnabledSpaces().then(() => setTick(n => n + 1))
-  }, [])
 
   function onEvolve(c) {
     const r = evolve(c.id)
@@ -47,44 +40,11 @@ export default function Dex() {
         <p style={{ margin: '0 0 10px', fontSize: 16 }}>
           {state.nickname ? `${state.nickname} 탐험가님의 도감` : '팝꾸즈 도감'}
         </p>
-        <Progress count={dexCount(count)} total={dexTotal()} />
+        <Progress count={count} total={TOTAL} />
         <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>
           ✦ 반짝조각 <strong style={{ color: '#B78700' }}>{rare}개</strong> — 미션을 깨면
           모이고, 아무 팝꾸즈에게나 쓸 수 있어요.
         </p>
-      </div>
-
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ marginTop: 0, fontSize: 16 }}>체험 공간 스탬프</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {getEnabledSpaces().map(id => {
-            const sp = findSpace(id)
-            if (!sp) return null
-            const has = hasStamp(id)
-            const locked = spaceLocked(id, count)
-            return (
-              <div key={id} style={{
-                border: '1px solid var(--ink-4)',
-                borderRadius: 8,
-                padding: '12px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: has ? '#f0fff4' : '#fff'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: has ? '#2f855a' : 'inherit' }}>{sp.name}</div>
-                  <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>
-                    {has ? '받음 (도장)' : locked ? `팝꾸즈 ${sp.unlockAt - count}마리 잡으면 열려요` : '담당자에게 체험·설문 후 QR을 받으세요'}
-                  </div>
-                </div>
-                <div style={{ fontSize: 24, opacity: has ? 1 : 0.2 }}>
-                  {has ? '💮' : '⭕'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
 
       <div className="dexgrid" key={tick}>
@@ -117,7 +77,7 @@ export default function Dex() {
                     : `${c.elementIcon} ${c.element}`}
               </p>
 
-              {!caught && <p className="spot">📍 {spotOf(c)}</p>}
+              {!caught && <p className="spot">탐지기에서 나타나요</p>}
 
               {caught && st.evolved && <span className="evo-tag">진화 완료</span>}
 
@@ -167,7 +127,7 @@ export default function Dex() {
         <ul className="rules">
           <li>
             <b>·</b>
-            <span>부스의 QR로 처음 만나면 그 팝꾸즈 조각 <strong>3개</strong></span>
+            <span>처음 잡으면 그 팝꾸즈 조각 <strong>3개</strong></span>
           </li>
           <li>
             <b>·</b>

@@ -46,18 +46,12 @@ export default function Ticket() {
             </button>
           )}
           
-          {status.total !== 2 && (
-            <p style={{ margin: '8px 0', fontSize: 14, color: 'var(--brand)' }}>
-              도감을 다 채우면 키캡 2개!
-            </p>
-          )}
-          
           <p className="footnote">스태프는 코드와 개수를 적어 두세요</p>
         </div>
       ) : (
         <div className="card center stack">
           <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 교환권</h2>
-          <p>팝꾸즈 3마리를 잡고 체험 공간에서 스탬프를 받으면 키캡 1개, 도감을 다 채우면 2개</p>
+          <p>팝꾸즈 5마리를 모두 잡으면 키캡 1개</p>
           <Link className="btn btn-primary" to="/dex">
             도감 열기
           </Link>

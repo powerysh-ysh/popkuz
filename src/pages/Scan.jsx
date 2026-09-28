@@ -33,7 +33,7 @@ export default function Scan() {
   const stopScanRef = useRef(null)
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { capture, count, has } = useHunt()
+  const { capture, count, has, state } = useHunt()
 
   const [error, setError] = useState(null)
   const [ready, setReady] = useState(false)
@@ -131,7 +131,7 @@ export default function Scan() {
       const m = getMission()
       if (m && !m.doneAt) return scheduleWild()
       if (foundRef.current) return scheduleWild()
-      const c = pickWild(CHARACTERS)
+      const c = pickWild(CHARACTERS, cfg.goal === 'collect' ? state.caught : undefined)
       const fake = rollFake(c, getWild().count)
       foundRef.current = c
       // 반짝 개체는 조금 더 길게 울려서 "뭔가 다르다"를 손으로도 알립니다.
@@ -156,10 +156,10 @@ export default function Scan() {
         scheduleWild()
       }, ESCAPE_MS)
     }, nextGap())
-  }, [])
+  }, [cfg.goal, state.caught])
 
   useEffect(() => {
-    if (demo || error || !cfg.hasWild) return
+    if (demo || !cfg.hasWild || (error && cfg.goal !== 'collect')) return
     scheduleWild()
     return () => {
       clearTimeout(wildTimer.current)
@@ -312,9 +312,26 @@ export default function Scan() {
       addPieces(c.id, gain)
       buzz(v?.shiny ? [60, 40, 60, 40, 160] : [50, 40, 120])
       const who = v ? variantName(c, v) : c.name
-      setToast(`포획! ${who} 조각 +${gain}`)
+
+      let scoreText = ''
+      let isDone = false
+      if (cfg.goal === 'collect') {
+        const { state: nextState, isNew } = capture(c.id)
+        const n = (kind === 'catch' ? 100 : 30) + (isNew ? 100 : 0) + (v?.shiny ? 200 : 0)
+        addBonus(n, 'wild')
+        scoreText = ` · +${n}점`
+        isDone = nextState.caught.length >= TOTAL
+      }
+
+      setToast(`포획! ${who} 조각 +${gain}${scoreText}`)
       setTimeout(() => setToast(''), 2600)
       bumpQuest('wild')
+
+      if (isDone) {
+        navigate('/done')
+        return
+      }
+
       scheduleWild()
       return
     }
@@ -375,7 +392,7 @@ export default function Scan() {
     bumpQuest('miss')
   }
 
-  if (error) {
+  if (error && cfg.goal !== 'collect') {
     return (
       <div className="shell">
         <header className="topbar">
@@ -410,6 +427,11 @@ export default function Scan() {
     <div className="scan">
       <video ref={videoRef} className="scan-video" playsInline muted autoPlay />
       <div className="scan-dim" />
+      {error && cfg.goal === 'collect' && (
+        <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 16, zIndex: 10, opacity: 0.8 }}>
+          카메라 없이도 팝꾸즈가 나타나요
+        </div>
+      )}
 
       {/* 조준 프레임 */}
       {!found && (
@@ -478,7 +500,21 @@ export default function Scan() {
       {!found && (
         <div className="scan-hint">
           <span className="radar" />
-          {!ready ? (
+          {cfg.goal === 'collect' ? (
+            (() => {
+              const pool = CHARACTERS.filter((c) => !has(c.id))
+              if (!pool.length) return '팝꾸즈를 찾는 중…'
+              return (
+                <span>
+                  탐지기를 켜 두면 팝꾸즈가 나타나요
+                  <br />
+                  <span style={{ fontSize: 13, opacity: 0.8 }}>
+                    남은 팝꾸즈 {pool.length}마리
+                  </span>
+                </span>
+              )
+            })()
+          ) : !ready ? (
             '카메라를 켜는 중…'
           ) : (
             (() => {

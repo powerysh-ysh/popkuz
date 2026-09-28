@@ -11,7 +11,7 @@ const KEY = 'popkkus.v1'
 
 // ① 게임 규칙이나 저장 형식이 바뀐 배포에서만 이 값을 바꾼다
 // ② 행사 중에 바꾸면 관람객의 진행 기록(도감·점수·할인권)이 전부 지워진다.
-export const DATA_VERSION = '2026-09-27-stamps'
+export const DATA_VERSION = '2026-09-28-random'
 
 export function ensureVersion() {
   try {

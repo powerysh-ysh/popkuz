@@ -168,13 +168,13 @@ export default function Home() {
             <li>
               <b>1</b>
               <span>
-                부스를 돌아다니며 <strong>팝꾸즈 QR</strong>을 찾으세요.
+                <strong>탐지기</strong>를 켜 두면 팝꾸즈가 랜덤으로 나타나요.
               </span>
             </li>
             <li>
               <b>2</b>
               <span>
-                <strong>탐지기</strong>를 켜고 QR을 비추면 그 자리에서 잡을 수 있어요.
+                공을 던져 잡으면 도감에 들어가요(가짜 카피꾸 주의).
               </span>
             </li>
             <li>
@@ -185,7 +185,7 @@ export default function Home() {
             </li>
             <li>
               <b>4</b>
-              <span>완주 화면을 스태프에게 보여주고 경품을 받아가세요 🎁</span>
+              <span>5마리를 모두 잡으면 완주 화면을 스태프에게 보여 주고 키캡 1개 🎁</span>
             </li>
           </ul>
         )}
