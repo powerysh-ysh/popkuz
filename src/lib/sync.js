@@ -208,3 +208,51 @@ export async function fetchTop(n = 10) {
     return []
   }
 }
+
+/** 일별 통계 조회 */
+export async function fetchDailyStats() {
+  if (!syncEnabled) return null
+  try {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+    const res = await fetch(`${URL_BASE}/rest/v1/rpc/hunt_daily_stats`, {
+      method: 'POST',
+      signal: ctl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+      },
+      body: '{}',
+    })
+    clearTimeout(timer)
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
+/** 시간별 통계 조회 (오늘) */
+export async function fetchHourlyToday() {
+  if (!syncEnabled) return null
+  try {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+    const res = await fetch(`${URL_BASE}/rest/v1/rpc/hunt_hourly_today`, {
+      method: 'POST',
+      signal: ctl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+      },
+      body: '{}',
+    })
+    clearTimeout(timer)
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}

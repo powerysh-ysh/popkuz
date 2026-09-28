@@ -14,6 +14,7 @@ import Staff from './pages/Staff'
 import Rank from './pages/Rank'
 import Ticket from './pages/Ticket'
 import Stamp from './pages/Stamp'
+import Stats from './pages/Stats'
 import SoundToggle from './components/SoundToggle'
 import { unlock, playBgm, isUnlocked } from './lib/sfx'
 import { refreshEnabledSpaces } from './lib/stamps'
@@ -40,7 +41,7 @@ function AppContent() {
 
   useEffect(() => {
     const p = location.pathname
-    if (p.startsWith('/rank') || p.startsWith('/staff') || p.startsWith('/setup') || p.startsWith('/qr')) {
+    if (p.startsWith('/rank') || p.startsWith('/staff') || p.startsWith('/setup') || p.startsWith('/qr') || p.startsWith('/stats')) {
       playBgm('none')
     } else {
       playBgm('explore')
@@ -60,6 +61,7 @@ function AppContent() {
         <Route path="/mission" element={<Mission />} />
         <Route path="/done" element={<Done />} />
         <Route path="/staff" element={<Staff />} />
+        <Route path="/stats" element={<Stats />} />
         {/* 인쇄 없이 시연할 때 쓰는 화면 QR 보드 */}
         <Route path="/qr" element={<QrBoard />} />
         {/* 시연 공간에 맞춰 장소 이름을 바꾸는 화면 */}
