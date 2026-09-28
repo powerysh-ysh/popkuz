@@ -104,6 +104,7 @@ export function reset() {
     'popkkus.keycap.v1',
     'popkkus.sent.v1',
     'popkkus.stamps.v1',
+    'popkkus.survey.v1', // 참여 설문 완료
   ]
   for (const k of KEYS) {
     try {
