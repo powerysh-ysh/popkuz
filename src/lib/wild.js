@@ -18,8 +18,8 @@ const KEY = 'popkkus.wild.v1'
 export const MIN_GAP = 4500
 export const MAX_GAP = 9000
 
-/** 나타난 뒤 이만큼 지나면 도망갑니다. */
-export const ESCAPE_MS = 5000
+/** 나타난 뒤 이만큼 지나면 도망갑니다. (10번 던질 시간) */
+export const ESCAPE_MS = 25000
 
 export function nextGap() {
   return MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)

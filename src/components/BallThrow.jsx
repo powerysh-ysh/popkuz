@@ -14,6 +14,7 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
   const wrapRef = useRef(null)
   const ballRef = useRef(null)
   const rafRef = useRef(0)
+  const missesRef = useRef(0)
 
   const drag = useRef(null) // { id, sx, sy, samples: [] }
   const [pos, setPos] = useState({ x: 0, y: 0 }) // 공의 현재 오프셋(px)
@@ -37,12 +38,13 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
     const b = ballRef.current?.getBoundingClientRect()
     const t = targetRef.current?.getBoundingClientRect()
     if (!b || !t) return false
-    // 캐릭터 그림의 가장자리는 투명하므로 안쪽으로 조금 좁혀 판정합니다.
-    const pad = t.width * 0.16
+    // 관람객이 쉽게 맞히도록 판정을 넓힙니다.
+    const padX = -t.width * 0.3
+    const padY = -t.height * 0.3
     const bx = b.left + b.width / 2
     const by = b.top + b.height / 2
     return (
-      bx > t.left + pad && bx < t.right - pad && by > t.top + pad && by < t.bottom - pad
+      bx > t.left + padX && bx < t.right - padX && by > t.top + padY && by < t.bottom - padY
     )
   }
 
@@ -52,6 +54,7 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
     let y = pos.y
     let s = 1
     let last = performance.now()
+    const startTime = last
     let hit = false
 
     const step = (now) => {
@@ -66,21 +69,23 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
       setPos({ x, y })
       setScale(s)
 
-      if (!hit && isHit()) {
+      const wrap = wrapRef.current?.getBoundingClientRect()
+      const out = !wrap || y > 80 || Math.abs(x) > wrap.width || y < -wrap.height * 1.4
+
+      if (!hit && (isHit() || (missesRef.current >= 9 && (now - startTime >= 120 || out)))) {
         hit = true
         cancelAnimationFrame(rafRef.current)
         onHit(ballType)
         return
       }
 
-      const wrap = wrapRef.current?.getBoundingClientRect()
-      const out = !wrap || y > 80 || Math.abs(x) > wrap.width || y < -wrap.height * 1.4
       if (out) {
         cancelAnimationFrame(rafRef.current)
         // 빗나가면 캐릭터가 놀라서 멀리 달아납니다.
         onMiss?.()
         setMisses((m) => {
           const n = m + 1
+          missesRef.current = n
           setHint(n >= 3 ? '아깝다! 아래 버튼으로 바로 잡아도 돼요' : '아깝다! 다시 던져보세요')
           return n
         })
