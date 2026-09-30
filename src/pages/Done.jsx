@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
 import { modeConfig } from '../lib/mode'
@@ -7,9 +7,11 @@ import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
 import * as sfx from '../lib/sfx'
 import { keycapStatus } from '../lib/keycap'
+import { isSurveyDone, surveyUrl } from '../lib/survey'
 
 export default function Done() {
-  const { complete, finish, state, count } = useHunt()
+  const { complete, finish, state, count, resetAll } = useHunt()
+  const navigate = useNavigate()
   const mode = modeConfig()
   const goal = mode.goalCount || TOTAL
   const synced = useRef(false)
@@ -70,13 +72,32 @@ export default function Done() {
       </div>
 
       <div className="stack">
-        <Link className="btn btn-primary" to="/ticket">
-          키캡 교환권 보기
-        </Link>
+        {status.code && !isSurveyDone() ? (
+          <a className="btn btn-primary" href={surveyUrl(status.code)}>
+            📝 30초 설문하고 키캡 받기
+          </a>
+        ) : (
+          <Link className="btn btn-primary" to="/ticket">
+            키캡 교환권 보기
+          </Link>
+        )}
         <Link className="btn btn-ghost" to="/dex">
           도감 · 진화 보러 가기
         </Link>
       </div>
+
+      <button
+        className="btn btn-ghost"
+        style={{ fontSize: 'small' }}
+        onClick={() => {
+          if (window.confirm('지금까지 잡은 팝꾸즈와 점수가 모두 지워져요. 처음부터 다시 할까요?')) {
+            navigate('/', { replace: true })
+            setTimeout(() => resetAll(), 0)
+          }
+        }}
+      >
+        처음부터 다시 하기
+      </button>
 
       <p className="footnote">
         함께해 주셔서 고맙습니다! 🌱

@@ -60,6 +60,9 @@ export function startHunt(nickname) {
     nickname: nickname.trim().slice(0, 12),
     startedAt: state.startedAt ?? new Date().toISOString(),
   }
+  if (!state.caught || state.caught.length === 0) {
+    next.doneAt = null
+  }
   return save(next)
 }
 

@@ -10,7 +10,7 @@ import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 
 export default function Home() {
-  const { started, start, count, complete, state } = useHunt()
+  const { started, start, count, complete, state, resetAll } = useHunt()
   const mode = modeConfig()
   const goal = mode.goalCount || TOTAL
   const store = mode.id === 'store'
@@ -120,6 +120,17 @@ export default function Home() {
               🎁 경품 받으러 가기
             </Link>
           )}
+          <button
+            className="btn btn-ghost"
+            style={{ fontSize: 'small' }}
+            onClick={() => {
+              if (window.confirm('지금까지 잡은 팝꾸즈와 점수가 모두 지워져요. 처음부터 다시 할까요?')) {
+                resetAll()
+              }
+            }}
+          >
+            처음부터 다시 하기
+          </button>
         </div>
       ) : (
         <form className="card stack" onSubmit={onSubmit} style={{ marginTop: 14 }}>
