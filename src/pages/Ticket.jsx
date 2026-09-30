@@ -3,11 +3,15 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { keycapStatus, redeemKeycaps } from '../lib/keycap'
 import { useHunt } from '../lib/HuntContext'
 import { isSurveyDone, markSurveyDone, surveyUrl } from '../lib/survey'
+import { modeConfig } from '../lib/mode'
+import { TOTAL } from '../data/characters'
 
 export default function Ticket() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { count } = useHunt()
+  const mode = modeConfig()
+  const goal = mode.goalCount || TOTAL
   const [status, setStatus] = useState(() => keycapStatus(count))
   const [surveyDone, setSurveyDone] = useState(() => isSurveyDone())
 
@@ -74,7 +78,7 @@ export default function Ticket() {
       ) : (
         <div className="card center stack">
           <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 교환권</h2>
-          <p>팝꾸즈 5마리를 모두 잡으면 키캡 1개</p>
+          <p>팝꾸즈 {goal}마리를 잡으면 키캡 1개</p>
           <Link className="btn btn-primary" to="/dex">
             도감 열기
           </Link>

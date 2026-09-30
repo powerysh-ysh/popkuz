@@ -12,6 +12,7 @@ import Progress from '../components/Progress'
 export default function Home() {
   const { started, start, count, complete, state } = useHunt()
   const mode = modeConfig()
+  const goal = mode.goalCount || TOTAL
   const store = mode.id === 'store'
   const [name, setName] = useState('')
   const navigate = useNavigate()
@@ -60,7 +61,7 @@ export default function Home() {
             <>
               탐지기를 켜 두면 팝꾸즈 {TOTAL}마리가 랜덤으로 나타나요.
               <br />
-              모두 잡아서 도감을 완성해 주세요!
+              <strong>2마리</strong>만 잡으면 3D 프린터 키캡!
             </>
           )}
         </p>
@@ -84,7 +85,7 @@ export default function Home() {
             <p style={{ margin: '0 0 10px', fontSize: 16 }}>
               {state.nickname} 탐험가님, 지금까지 {count}마리!
             </p>
-            <Progress count={count} total={TOTAL} />
+            <Progress count={store ? count : Math.min(count, goal)} total={store ? TOTAL : goal} />
           </div>
           <Link className="btn btn-primary" to="/scan">
             🔍 팝꾸즈 탐지기 켜기
@@ -185,7 +186,7 @@ export default function Home() {
             </li>
             <li>
               <b>4</b>
-              <span>5마리를 모두 잡으면 완주 화면을 스태프에게 보여 주고 키캡 1개 🎁</span>
+              <span>2마리를 잡으면 완주 화면을 스태프에게 보여 주고 키캡 1개 🎁</span>
             </li>
           </ul>
         )}

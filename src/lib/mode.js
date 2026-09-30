@@ -22,7 +22,8 @@ export const MODES = {
     id: 'expo',
     name: '엑스포 부스',
     where: '킨텍스 제2전시장 · 시작박스 부스',
-    // 5마리를 다 모으면 완주 → 경품
+    // 2마리를 다 모으면 완주 → 경품
+    goalCount: 2,
     goal: 'collect',
     reward: '완주 선물',
     hasCoupon: false,
@@ -36,6 +37,7 @@ export const MODES = {
     name: '팝업스토어',
     where: '동명대학교 교내 팝업스토어',
     // 찾을 때마다 할인권 → 매장에서 사용
+    goalCount: 5,
     goal: 'coupon',
     reward: '매장 할인권',
     hasCoupon: true,

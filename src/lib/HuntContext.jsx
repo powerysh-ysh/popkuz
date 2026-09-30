@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import * as storage from './storage'
 import { syncCatch, syncDone, syncHunter } from './sync'
 import { TOTAL } from '../data/characters'
+import { modeConfig } from './mode'
 
 const Ctx = createContext(null)
 
@@ -41,6 +42,7 @@ export function HuntProvider({ children }) {
 
   const value = useMemo(() => {
     const count = state.caught.length
+    const goal = modeConfig().goalCount || TOTAL
     return {
       state,
       start,
@@ -49,7 +51,8 @@ export function HuntProvider({ children }) {
       resetAll,
       count,
       total: TOTAL,
-      complete: count >= TOTAL,
+      goal,
+      complete: count >= goal,
       started: Boolean(state.nickname),
       has: (id) => storage.hasCaught(state, id),
       code: storage.completionCode(state),

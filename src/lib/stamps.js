@@ -1,6 +1,7 @@
 import { syncCatch } from './sync'
 import { load } from './storage'
 import { findSpace } from '../data/spaces'
+import { modeConfig } from './mode'
 
 const KEY_SPACES = 'popkkus.spaces.v1'
 const KEY_STAMPS = 'popkkus.stamps.v1'
@@ -123,6 +124,6 @@ export function dexCount(caughtCount) {
 }
 
 export function keycapCount(caughtCount) {
-  if (caughtCount >= 5) return 1
+  if (caughtCount >= (modeConfig().goalCount || 5)) return 1
   return 0
 }

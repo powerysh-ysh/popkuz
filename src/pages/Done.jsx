@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { CHARACTERS } from '../data/characters'
+import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
+import { modeConfig } from '../lib/mode'
 import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
 import * as sfx from '../lib/sfx'
@@ -9,6 +10,8 @@ import { keycapStatus } from '../lib/keycap'
 
 export default function Done() {
   const { complete, finish, state, count } = useHunt()
+  const mode = modeConfig()
+  const goal = mode.goalCount || TOTAL
   const synced = useRef(false)
   const played = useRef(false)
   const score = totalScore()
@@ -40,9 +43,9 @@ export default function Done() {
 
       <section className="hero" style={{ paddingTop: 16 }}>
         <h1>
-          도감 <em>완성!</em>
+          <em>완주!</em>
         </h1>
-        <p>{state.nickname || '탐험가'}님, 팝꾸즈 5마리를 모두 만났어요 🎉</p>
+        <p>{state.nickname || '탐험가'}님, 팝꾸즈 {goal}마리를 잡았어요 🎉</p>
         <div style={{ fontSize: '3rem', fontWeight: 'bold', margin: '20px 0', color: 'var(--brand)' }}>
           총점: {score}점
         </div>

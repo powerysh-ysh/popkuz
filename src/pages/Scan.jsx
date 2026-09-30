@@ -33,7 +33,7 @@ export default function Scan() {
   const stopScanRef = useRef(null)
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { capture, count, has, state } = useHunt()
+  const { capture, count, has, state, goal } = useHunt()
 
   const [error, setError] = useState(null)
   const [ready, setReady] = useState(false)
@@ -320,7 +320,7 @@ export default function Scan() {
         const n = (kind === 'catch' ? 100 : 30) + (isNew ? 100 : 0) + (v?.shiny ? 200 : 0)
         addBonus(n, 'wild')
         scoreText = ` · +${n}점`
-        isDone = nextState.caught.length >= TOTAL
+        isDone = nextState.caught.length === goal && isNew
       }
 
       setToast(`포획! ${who} 조각 +${gain}${scoreText}`)
@@ -336,7 +336,7 @@ export default function Scan() {
       return
     }
 
-    const { state, isNew } = capture(c.id)
+    const { state: nextState, isNew } = capture(c.id)
     buzz([50, 40, 120])
     if (isNew) {
       addPieces(c.id, GAIN.qr)
@@ -361,7 +361,7 @@ export default function Scan() {
       return
     }
 
-    const done = state.caught.length >= TOTAL
+    const done = nextState.caught.length === goal && isNew
     foundRef.current = null
     setFound(null)
     if (done) navigate('/done')
@@ -466,7 +466,7 @@ export default function Scan() {
               </span>
             </div>
           ) : (
-            <Progress count={count} total={TOTAL} />
+            <Progress count={Math.min(count, goal)} total={goal} />
           )}
         </div>
         {wildCount > 0 && <span className="scan-wild">🌿 {wildCount}</span>}
@@ -509,7 +509,7 @@ export default function Scan() {
                   탐지기를 켜 두면 팝꾸즈가 나타나요
                   <br />
                   <span style={{ fontSize: 13, opacity: 0.8 }}>
-                    남은 팝꾸즈 {pool.length}마리
+                    남은 팝꾸즈 {Math.max(0, goal - count)}마리
                   </span>
                 </span>
               )

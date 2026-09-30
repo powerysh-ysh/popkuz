@@ -5,7 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { arSupported, launchAR } from '../lib/ar'
 import { EVOLVE_COST, evolve, evolveStatus, rareCount, ro } from '../lib/pieces'
 import { buzz } from '../lib/scanner'
-import { isStore } from '../lib/mode'
+import { isStore, modeConfig } from '../lib/mode'
 import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 import * as sfx from '../lib/sfx'
@@ -42,6 +42,11 @@ export default function Dex() {
           {state.nickname ? `${state.nickname} 탐험가님의 도감` : '팝꾸즈 도감'}
         </p>
         <Progress count={count} total={TOTAL} />
+        {modeConfig().goal === 'collect' && (
+          <p style={{ margin: '12px 0 0', fontSize: 14, color: 'var(--brand)', fontWeight: 'bold' }}>
+            2마리 잡으면 키캡! 나머지는 도감 채우기 보너스
+          </p>
+        )}
         <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>
           ✦ 반짝조각 <strong style={{ color: '#B78700' }}>{rare}개</strong> — 미션을 깨면
           모이고, 아무 팝꾸즈에게나 쓸 수 있어요.
