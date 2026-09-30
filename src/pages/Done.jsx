@@ -65,7 +65,7 @@ export default function Done() {
 
       <div className="card">
         <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
-          도감 완성! 3D 프린터 키캡 1개
+          완주! 3D 프린터 키캡 1개
         </p>
       </div>
 

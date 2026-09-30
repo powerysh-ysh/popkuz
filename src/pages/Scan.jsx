@@ -18,6 +18,7 @@ import Popkku from '../components/Popkku'
 import Progress from '../components/Progress'
 import Battle from '../components/Battle'
 import * as sfx from '../lib/sfx'
+import { loadMatcher, matchFrame } from '../lib/imageMatch'
 
 /**
  * 팝꾸즈 탐지기 — 앱 안에서 카메라를 켜고 QR을 찾습니다.
@@ -52,6 +53,11 @@ export default function Scan() {
   // 인식 상태 — 무엇이 안 되는지 화면에서 바로 보이게 합니다.
   const [stat, setStat] = useState(null)
   const otherQrAt = useRef(0)
+  
+  const [matcherReady, setMatcherReady] = useState(false)
+  const [matcherFailed, setMatcherFailed] = useState(false)
+  const matchStateRef = useRef({ last: -1, count: 0, cooldowns: {} })
+
   // 미션 모드가 켜져 있으면 목표와 경과 시간을 위에 띄웁니다.
   // 팝업스토어 모드에는 스피드 미션이 없습니다. 엑스포에서 하던 미션이
   // 남아 있어도 화면에 끌고 오지 않도록 여기서 걸러냅니다.
@@ -120,6 +126,38 @@ export default function Scan() {
     return () => clearInterval(t)
   }, [])
 
+  const scheduleWildRef = useRef(null)
+
+  const spawnWild = useCallback((c, isMatch) => {
+    const fake = rollFake(c, getWild().count)
+    foundRef.current = c
+    // 반짝 개체는 조금 더 길게 울려서 "뭔가 다르다"를 손으로도 알립니다.
+    const v = fake ? null : rollVariant()
+    buzz(v?.shiny ? [30, 50, 30, 50, 30, 50, 80] : [25, 40, 25])
+    sfx.wildAppear()
+    setFound({
+      character: c,
+      isNew: true,
+      wild: true,
+      fake,
+      variant: v,
+    })
+    if (isMatch) {
+      setToast('🔍 전시물 발견! 팝꾸즈가 나타났어요')
+      setTimeout(() => setToast(''), 2500)
+    }
+    // 일정 시간 안에 못 잡으면 도망갑니다 — 긴장감이 생깁니다.
+    escapeTimer.current = setTimeout(() => {
+      if (foundRef.current === c) {
+        foundRef.current = null
+        setFound(null)
+        setToast('야생 팝꾸즈가 도망갔어요!')
+        setTimeout(() => setToast(''), 2000)
+      }
+      scheduleWildRef.current?.()
+    }, ESCAPE_MS)
+  }, [])
+
   /**
    * 야생 출현 예약.
    * 미션 중에는 걸지 않습니다 — 기록 경쟁을 방해하면 안 됩니다.
@@ -132,31 +170,11 @@ export default function Scan() {
       if (m && !m.doneAt) return scheduleWild()
       if (foundRef.current) return scheduleWild()
       const c = pickWild(CHARACTERS, cfg.goal === 'collect' ? state.caught : undefined)
-      const fake = rollFake(c, getWild().count)
-      foundRef.current = c
-      // 반짝 개체는 조금 더 길게 울려서 "뭔가 다르다"를 손으로도 알립니다.
-      const v = fake ? null : rollVariant()
-      buzz(v?.shiny ? [30, 50, 30, 50, 30, 50, 80] : [25, 40, 25])
-      sfx.wildAppear()
-      setFound({
-        character: c,
-        isNew: true,
-        wild: true,
-        fake,
-        variant: v,
-      })
-      // 일정 시간 안에 못 잡으면 도망갑니다 — 긴장감이 생깁니다.
-      escapeTimer.current = setTimeout(() => {
-        if (foundRef.current === c) {
-          foundRef.current = null
-          setFound(null)
-          setToast('야생 팝꾸즈가 도망갔어요!')
-          setTimeout(() => setToast(''), 2000)
-        }
-        scheduleWild()
-      }, ESCAPE_MS)
+      spawnWild(c, false)
     }, nextGap())
-  }, [cfg.goal, state.caught])
+  }, [cfg.goal, state.caught, spawnWild])
+
+  scheduleWildRef.current = scheduleWild
 
   useEffect(() => {
     if (demo || !cfg.hasWild || (error && cfg.goal !== 'collect')) return
@@ -242,6 +260,56 @@ export default function Scan() {
       stopCamera(streamRef.current)
     }
   }, [handleFound, demo])
+
+  useEffect(() => {
+    if (cfg.goal !== 'collect' || !ready || error || demo) return
+    let active = true
+    loadMatcher().then((ok) => {
+      if (!active) return
+      if (ok) setMatcherReady(true)
+      else setMatcherFailed(true)
+    })
+    return () => { active = false }
+  }, [cfg.goal, ready, error, demo])
+
+  useEffect(() => {
+    if (!matcherReady || cfg.goal !== 'collect' || !ready || error || demo) return
+    const t = setInterval(() => {
+      if (document.hidden || foundRef.current || caught) return
+      const v = videoRef.current
+      if (!v) return
+      
+      const res = matchFrame(v)
+      if (res) {
+        setStat((prev) => (prev ? { ...prev, match: res } : { frames: 0, decodes: 0, engine: 'match', match: res }))
+        
+        const now = Date.now()
+        const st = matchStateRef.current
+        
+        if (st.cooldowns[res.target] && now - st.cooldowns[res.target] < 15000) {
+          return
+        }
+        
+        if (st.last === res.target) {
+          st.count += 1
+          if (st.count === 2) {
+            st.cooldowns[res.target] = now
+            st.last = -1
+            st.count = 0
+            
+            const wildC = pickWild(CHARACTERS, state.caught)
+            spawnWild(wildC, true)
+          }
+        } else {
+          st.last = res.target
+          st.count = 1
+        }
+      } else {
+        if (debug) setStat((prev) => (prev ? { ...prev, match: null } : prev))
+      }
+    }, 700)
+    return () => clearInterval(t)
+  }, [matcherReady, cfg.goal, ready, error, demo, spawnWild, state.caught, caught, debug])
 
   /**
    * 미션 진행을 한 칸 올립니다. 깨면 반짝조각을 주고 다음 미션이 붙습니다.
@@ -361,7 +429,7 @@ export default function Scan() {
       return
     }
 
-    const done = nextState.caught.length === goal && isNew
+    const done = nextState.caught.length >= goal
     foundRef.current = null
     setFound(null)
     if (done) navigate('/done')
@@ -541,6 +609,12 @@ export default function Scan() {
         </div>
       )}
 
+      {!found && cfg.goal === 'collect' && ready && !matcherFailed && (
+        <div style={{ position: 'absolute', bottom: '150px', left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 14, zIndex: 10, opacity: 0.9 }}>
+          {matcherReady ? '📷 전시물을 비추면 팝꾸즈가 나와요' : '전시물 인식 준비 중…'}
+        </div>
+      )}
+
       {/* 인식 상태 — ?debug=1 을 붙이면 자세히 보입니다 */}
       {!found && stat && (
         <div className="scan-stat">
@@ -549,6 +623,7 @@ export default function Scan() {
               엔진 {stat.engine} · 프레임 {stat.frames} · 인식 {stat.decodes}
               {stat.lastText ? <><br />읽음: {stat.lastText.slice(0, 60)}</> : null}
               {stat.lastError ? <><br />오류: {stat.lastError.slice(0, 60)}</> : null}
+              {stat.match ? <><br />매치: T{stat.match.target} S:{stat.match.score.toFixed(2)} G:{stat.match.gap.toFixed(2)}</> : null}
             </>
           ) : (
             <>
