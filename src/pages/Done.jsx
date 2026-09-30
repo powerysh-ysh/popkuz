@@ -67,18 +67,30 @@ export default function Done() {
 
       <div className="card">
         <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
-          완주! 3D 프린터 키캡 1개
+          🎉 팝꾸즈 {goal}마리 획득!
+        </p>
+        <p className="center" style={{ margin: '8px 0 0', fontSize: 14 }}>
+          아래 두 가지를 하면 3D 프린터 키캡을 드려요
         </p>
       </div>
 
       <div className="stack">
+        <a 
+          className="btn btn-primary" 
+          href="https://www.instagram.com/tm_localcon/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ background: 'linear-gradient(45deg,#f58529,#dd2a7b,#8134af)', color: 'white', border: 'none' }}
+        >
+          📸 인스타그램 팔로우하기 @tm_localcon
+        </a>
         {status.code && !isSurveyDone() ? (
           <a className="btn btn-primary" href={surveyUrl(status.code)}>
             📝 30초 설문하고 키캡 받기
           </a>
         ) : (
           <Link className="btn btn-primary" to="/ticket">
-            키캡 교환권 보기
+            🎁 키캡 교환권 보기
           </Link>
         )}
         <Link className="btn btn-ghost" to="/dex">
