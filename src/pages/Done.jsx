@@ -87,6 +87,15 @@ export default function Done() {
           </div>
 
           <div className="stack">
+            {status.code && !isSurveyDone() ? (
+              <Link className="btn btn-primary" to="/survey">
+                📝 30초 설문하고 키캡 받기
+              </Link>
+            ) : (
+              <Link className="btn btn-primary" to="/ticket">
+                🎁 키캡 교환권 보기
+              </Link>
+            )}
             <a 
               className="btn btn-primary" 
               href="https://www.instagram.com/tm_localcon/" 
@@ -96,15 +105,6 @@ export default function Done() {
             >
               📸 인스타그램 팔로우하기 @tm_localcon
             </a>
-            {status.code && !isSurveyDone() ? (
-              <a className="btn btn-primary" href={surveyUrl(status.code)}>
-                📝 30초 설문하고 키캡 받기
-              </a>
-            ) : (
-              <Link className="btn btn-primary" to="/ticket">
-                🎁 키캡 교환권 보기
-              </Link>
-            )}
             <Link className="btn btn-ghost" to="/dex">
               도감 · 진화 보러 가기
             </Link>

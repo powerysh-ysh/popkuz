@@ -48,7 +48,7 @@ export default function Scan() {
   const roamRef = useRef(null) // 바깥 상자 — 돌아다니기용 (파동 링까지 같이 움직임)
   const [caught, setCaught] = useState(false)
   // 발견한 팝꾸즈가 화면 안을 돌아다니게 합니다. 잡히면 멈춥니다.
-  const { startle } = useRoam(roamRef, Boolean(found) && !caught)
+  const { startle } = useRoam(roamRef, Boolean(found) && !caught && modeConfig().goal !== 'collect')
 
   // 인식 상태 — 무엇이 안 되는지 화면에서 바로 보이게 합니다.
   const [stat, setStat] = useState(null)
@@ -456,7 +456,7 @@ export default function Scan() {
 
   /** 공이 빗나갔을 때 — 캐릭터가 달아나고, 연속 명중 미션은 처음으로 */
   function onBallMiss() {
-    startle()
+    if (cfg.goal !== 'collect') startle()
     bumpQuest('miss')
   }
 

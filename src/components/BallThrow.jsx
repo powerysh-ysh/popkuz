@@ -145,8 +145,25 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
       reset()
       return
     }
-    vx = Math.max(-26, Math.min(26, vx))
-    vy = Math.max(-46, vy)
+    if (easy && targetRef.current && ballRef.current) {
+      const b = ballRef.current.getBoundingClientRect()
+      const t = targetRef.current.getBoundingClientRect()
+      const bx = b.left + b.width / 2
+      const by = b.top + b.height / 2
+      const tx = t.left + t.width / 2
+      const ty = t.top + t.height / 2
+      const dx = tx - bx
+      const dy = ty - by
+
+      const minVy = -Math.sqrt(2 * 0.9 * Math.abs(dy)) - 2
+      if (vy > minVy) vy = minVy
+
+      const n = (-vy + Math.sqrt(vy * vy - 1.8 * Math.abs(dy))) / 0.9
+      vx = dx / n
+    } else {
+      vx = Math.max(-26, Math.min(26, vx))
+      vy = Math.max(-46, vy)
+    }
     launch(vx, vy)
   }
 

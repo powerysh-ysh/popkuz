@@ -67,9 +67,9 @@ export default function Ticket() {
           <div className="card center stack">
             <h2 style={{ marginTop: 0, fontSize: 18 }}>3D 프린터 키캡 교환권</h2>
             <p>키캡 받기 전에 30초 설문!</p>
-            <a href={surveyUrl(status.code)} className="btn btn-primary">
+            <Link to="/survey" className="btn btn-primary">
               설문하러 가기
-            </a>
+            </Link>
             <button className="btn btn-ghost" onClick={() => { markSurveyDone(); setSurveyDone(true); }} style={{ fontSize: '0.9em' }}>
               설문을 제출했어요
             </button>

@@ -4,6 +4,10 @@ export function surveyUrl(code) {
   return SURVEY_URL + '?usp=pp_url&entry.721134319=' + encodeURIComponent(code)
 }
 
+export function surveyEmbedUrl(code) {
+  return surveyUrl(code) + '&embedded=true'
+}
+
 export function isSurveyDone() {
   try {
     return localStorage.getItem('popkkus.survey.v1') === 'true'

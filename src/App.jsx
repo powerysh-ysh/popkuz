@@ -15,6 +15,7 @@ import Rank from './pages/Rank'
 import Ticket from './pages/Ticket'
 import Stamp from './pages/Stamp'
 import Stats from './pages/Stats'
+import Survey from './pages/Survey'
 import SoundToggle from './components/SoundToggle'
 import { unlock, playBgm, isUnlocked } from './lib/sfx'
 import { refreshEnabledSpaces } from './lib/stamps'
@@ -41,7 +42,7 @@ function AppContent() {
 
   useEffect(() => {
     const p = location.pathname
-    if (p.startsWith('/rank') || p.startsWith('/staff') || p.startsWith('/setup') || p.startsWith('/qr') || p.startsWith('/stats')) {
+    if (p.startsWith('/rank') || p.startsWith('/staff') || p.startsWith('/setup') || p.startsWith('/qr') || p.startsWith('/stats') || p.startsWith('/survey')) {
       playBgm('none')
     } else {
       playBgm('explore')
@@ -75,6 +76,7 @@ function AppContent() {
         {/* 스탬프 QR */}
         <Route path="/s/:id" element={<Stamp />} />
         {/* 짧은 QR 주소 (#/q7) — 다른 경로와 겹치지 않도록 두 글자만 */}
+        <Route path="/survey" element={<Survey />} />
         <Route path="/:id" element={<Catch />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
