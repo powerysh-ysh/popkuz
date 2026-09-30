@@ -61,7 +61,7 @@ export default function Home() {
             <>
               탐지기를 켜 두면 팝꾸즈 {TOTAL}마리가 랜덤으로 나타나요.
               <br />
-              <strong>2마리</strong>만 잡으면 3D 프린터 키캡!
+              <strong>{goal}마리</strong>만 잡으면 3D 프린터 키캡!
             </>
           )}
         </p>
@@ -197,7 +197,7 @@ export default function Home() {
             </li>
             <li>
               <b>4</b>
-              <span>2마리를 잡으면 완주 화면을 스태프에게 보여 주고 키캡 1개 🎁</span>
+              <span>{goal}마리를 잡으면 완주 화면을 스태프에게 보여 주고 키캡 1개 🎁</span>
             </li>
           </ul>
         )}

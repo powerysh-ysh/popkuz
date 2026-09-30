@@ -22,8 +22,8 @@ export const MODES = {
     id: 'expo',
     name: '엑스포 부스',
     where: '킨텍스 제2전시장 · 시작박스 부스',
-    // 2마리를 다 모으면 완주 → 경품
-    goalCount: 2, // 이 수만큼 잡으면 완주(키캡 대상)
+    // 1마리를 잡으면 완주 → 경품
+    goalCount: 1, // 이 수만큼 잡으면 완주(키캡 대상)
     goal: 'collect',
     reward: '완주 선물',
     hasCoupon: false,

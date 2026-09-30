@@ -5,7 +5,7 @@ import { useHunt } from '../lib/HuntContext'
 import { buzz, parseCatchUrl, scanLoop, startCamera, stopCamera } from '../lib/scanner'
 import BallThrow from '../components/BallThrow'
 import { elapsed, formatTime, getMission, markMission } from '../lib/mission'
-import { ESCAPE_MS, addWild, getWild, nextGap, pickWild } from '../lib/wild'
+import { ESCAPE_MS, ESCAPE_MS_EASY, addWild, getWild, nextGap, pickWild } from '../lib/wild'
 import { spotOf } from '../lib/spots'
 import { modeConfig } from '../lib/mode'
 import { useRoam } from '../lib/roam'
@@ -155,7 +155,7 @@ export default function Scan() {
         setTimeout(() => setToast(''), 2000)
       }
       scheduleWildRef.current?.()
-    }, ESCAPE_MS)
+    }, cfg.goal === 'collect' ? ESCAPE_MS_EASY : ESCAPE_MS)
   }, [])
 
   /**
@@ -542,7 +542,7 @@ export default function Scan() {
       </div>
 
       {/* 중간 미션 — 항상 하나가 걸려 있습니다 */}
-      {!found && quest && (
+      {!found && quest && cfg.goal !== 'collect' && (
         <div className="scan-quest">
           <span className="q-label">미션</span>
           <span className="q-text">{quest.text}</span>
@@ -712,6 +712,7 @@ export default function Scan() {
               onGiveUp={grab}
               onMiss={onBallMiss}
               allowJudge={found.wild}
+              easy={cfg.goal === 'collect'}
             />
           ) : (
             <div className="scan-actions">

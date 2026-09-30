@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { CHARACTERS, TOTAL } from '../data/characters'
 import { useHunt } from '../lib/HuntContext'
-import { modeConfig } from '../lib/mode'
+import { modeConfig, isStore } from '../lib/mode'
 import Popkku from '../components/Popkku'
 import { totalScore, syncTotalIfHigher } from '../lib/score'
 import * as sfx from '../lib/sfx'
@@ -35,19 +35,20 @@ export default function Done() {
   if (!complete) return <Navigate to="/dex" replace />
 
   const status = keycapStatus(count)
+  const store = isStore()
   return (
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          <span>시작박스</span> 완주!
+          <span>시작박스</span> {store ? '완성!' : '완주!'}
         </Link>
       </header>
 
       <section className="hero" style={{ paddingTop: 16 }}>
         <h1>
-          <em>완주!</em>
+          {store ? <>도감 <em>완성!</em></> : <em>완주!</em>}
         </h1>
-        <p>{state.nickname || '탐험가'}님, 팝꾸즈 {goal}마리를 잡았어요 🎉</p>
+        <p>{state.nickname || '탐험가'}님, 팝꾸즈 {goal}마리를 {store ? '모두 만났어요' : '잡았어요'} 🎉</p>
         <div style={{ fontSize: '3rem', fontWeight: 'bold', margin: '20px 0', color: 'var(--brand)' }}>
           총점: {score}점
         </div>
@@ -65,38 +66,51 @@ export default function Done() {
         ))}
       </div>
 
-      <div className="card">
-        <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
-          🎉 팝꾸즈 {goal}마리 획득!
-        </p>
-        <p className="center" style={{ margin: '8px 0 0', fontSize: 14 }}>
-          아래 두 가지를 하면 3D 프린터 키캡을 드려요
-        </p>
-      </div>
-
-      <div className="stack">
-        <a 
-          className="btn btn-primary" 
-          href="https://www.instagram.com/tm_localcon/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{ background: 'linear-gradient(45deg,#f58529,#dd2a7b,#8134af)', color: 'white', border: 'none' }}
-        >
-          📸 인스타그램 팔로우하기 @tm_localcon
-        </a>
-        {status.code && !isSurveyDone() ? (
-          <a className="btn btn-primary" href={surveyUrl(status.code)}>
-            📝 30초 설문하고 키캡 받기
-          </a>
-        ) : (
-          <Link className="btn btn-primary" to="/ticket">
-            🎁 키캡 교환권 보기
+      {store ? (
+        <div className="stack" style={{ marginTop: 32 }}>
+          <Link className="btn btn-primary" to="/wallet">
+            🎟 내 할인권 보기
           </Link>
-        )}
-        <Link className="btn btn-ghost" to="/dex">
-          도감 · 진화 보러 가기
-        </Link>
-      </div>
+          <Link className="btn btn-ghost" to="/dex">
+            도감 · 진화 보러 가기
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="card">
+            <p className="center" style={{ margin: 0, fontSize: 16, fontWeight: 'bold' }}>
+              🎉 팝꾸즈 {goal}마리 획득!
+            </p>
+            <p className="center" style={{ margin: '8px 0 0', fontSize: 14 }}>
+              아래 두 가지를 하면 3D 프린터 키캡을 드려요
+            </p>
+          </div>
+
+          <div className="stack">
+            <a 
+              className="btn btn-primary" 
+              href="https://www.instagram.com/tm_localcon/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ background: 'linear-gradient(45deg,#f58529,#dd2a7b,#8134af)', color: 'white', border: 'none' }}
+            >
+              📸 인스타그램 팔로우하기 @tm_localcon
+            </a>
+            {status.code && !isSurveyDone() ? (
+              <a className="btn btn-primary" href={surveyUrl(status.code)}>
+                📝 30초 설문하고 키캡 받기
+              </a>
+            ) : (
+              <Link className="btn btn-primary" to="/ticket">
+                🎁 키캡 교환권 보기
+              </Link>
+            )}
+            <Link className="btn btn-ghost" to="/dex">
+              도감 · 진화 보러 가기
+            </Link>
+          </div>
+        </>
+      )}
 
       <button
         className="btn btn-ghost"

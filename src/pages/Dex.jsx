@@ -44,7 +44,7 @@ export default function Dex() {
         <Progress count={count} total={TOTAL} />
         {modeConfig().goal === 'collect' && (
           <p style={{ margin: '12px 0 0', fontSize: 14, color: 'var(--brand)', fontWeight: 'bold' }}>
-            2마리 잡으면 키캡! 나머지는 도감 채우기 보너스
+            {modeConfig().goalCount}마리 잡으면 키캡! 나머지는 도감 채우기 보너스
           </p>
         )}
         <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>

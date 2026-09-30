@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *   · 어린이·어르신도 할 수 있게 실패해도 계속 재시도 가능
  *   · 세 번 놓치면 "그냥 잡기" 버튼이 나와 아무도 막히지 않음
  */
-export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, allowJudge = false }) {
+export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, allowJudge = false, easy = false }) {
   const wrapRef = useRef(null)
   const ballRef = useRef(null)
   const rafRef = useRef(0)
@@ -38,14 +38,22 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
     const b = ballRef.current?.getBoundingClientRect()
     const t = targetRef.current?.getBoundingClientRect()
     if (!b || !t) return false
-    // 관람객이 쉽게 맞히도록 판정을 넓힙니다.
-    const padX = -t.width * 0.3
-    const padY = -t.height * 0.3
     const bx = b.left + b.width / 2
     const by = b.top + b.height / 2
-    return (
-      bx > t.left + padX && bx < t.right - padX && by > t.top + padY && by < t.bottom - padY
-    )
+    
+    if (easy) {
+      // 관람객이 쉽게 맞히도록 판정을 넓힙니다.
+      const padX = -t.width * 0.3
+      const padY = -t.height * 0.3
+      return (
+        bx > t.left + padX && bx < t.right - padX && by > t.top + padY && by < t.bottom - padY
+      )
+    } else {
+      const pad = t.width * 0.16
+      return (
+        bx > t.left + pad && bx < t.right - pad && by > t.top + pad && by < t.bottom - pad
+      )
+    }
   }
 
   const launch = (vx, vy) => {
@@ -72,7 +80,7 @@ export default function BallThrow({ targetRef, color, onHit, onGiveUp, onMiss, a
       const wrap = wrapRef.current?.getBoundingClientRect()
       const out = !wrap || y > 80 || Math.abs(x) > wrap.width || y < -wrap.height * 1.4
 
-      if (!hit && (isHit() || (missesRef.current >= 9 && (now - startTime >= 120 || out)))) {
+      if (!hit && (isHit() || (easy && missesRef.current >= 9 && (now - startTime >= 120 || out)))) {
         hit = true
         cancelAnimationFrame(rafRef.current)
         onHit(ballType)
