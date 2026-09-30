@@ -129,7 +129,10 @@ export default function Scan() {
   const scheduleWildRef = useRef(null)
 
   const spawnWild = useCallback((c, isMatch) => {
-    const fake = rollFake(c, getWild().count)
+    let fake = modeConfig().goal === 'collect' 
+      ? rollFake(c, getWild().count, true) 
+      : rollFake(c, getWild().count)
+    if (modeConfig().goal === 'collect' && isMatch) fake = null
     foundRef.current = c
     // 반짝 개체는 조금 더 길게 울려서 "뭔가 다르다"를 손으로도 알립니다.
     const v = fake ? null : rollVariant()

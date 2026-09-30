@@ -63,12 +63,15 @@ export function fakeChance(caughtSoFar) {
   return Math.min(0.5, 0.18 + caughtSoFar * 0.025)
 }
 
+export const FAKE_CHANCE_EASY = 0.08
+
 /**
  * 이번에 나올 야생이 가품인지 정합니다.
  * @returns {{tell: object, en: string}|null} null 이면 진품
  */
-export function rollFake(character, caughtSoFar) {
-  if (Math.random() >= fakeChance(caughtSoFar)) return null
+export function rollFake(character, caughtSoFar, easy = false) {
+  const chance = easy ? FAKE_CHANCE_EASY : fakeChance(caughtSoFar)
+  if (Math.random() >= chance) return null
   const tell = TELLS[Math.floor(Math.random() * TELLS.length)]
   return { tell, en: fakeEn(character.en) }
 }
